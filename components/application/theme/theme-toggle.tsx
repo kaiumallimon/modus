@@ -275,8 +275,10 @@ export interface ThemeToggleProps {
   size?: "small" | "medium";
   /** Circular reveal duration in milliseconds. */
   transitionDuration?: number;
-  /** Force showing or hiding labels. */
-  showLabels?: boolean;
+  /** Header label displayed above the tab control (defaults to "Theme" in sidebar appearance). Set to null or false to hide. */
+  label?: string | null | false;
+  /** Explicitly control whether text labels are shown inside the tabs. Defaults to false (icon-only). */
+  showInnerLabels?: boolean;
 }
 
 /** 3-option theme control: System, Light, and Dark. */
@@ -286,7 +288,8 @@ export function ThemeToggle({
   className,
   size = "medium",
   transitionDuration = THEME_TRANSITION_DURATION,
-  showLabels,
+  label,
+  showInnerLabels = false,
 }: ThemeToggleProps) {
   const localize = useTemplateCopy();
   const theme = useThemeMode();
@@ -353,7 +356,7 @@ export function ThemeToggle({
           className,
         )}
       >
-        {THEME_OPTIONS.map(({ mode, label, Icon }) => {
+        {THEME_OPTIONS.map(({ mode, label: optionLabel, Icon }) => {
           const selected = theme === mode;
           return (
             <button
@@ -361,8 +364,8 @@ export function ThemeToggle({
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={`${label} theme`}
-              title={`${label} theme`}
+              aria-label={`${optionLabel} theme`}
+              title={`${optionLabel} theme`}
               onClick={(event) => {
                 if (selected) return;
                 const pointerOrigin =
@@ -392,7 +395,7 @@ export function ThemeToggle({
   }
 
   // ── Compact Icon-Only Segmented Treatment (e.g. Login Page Header) ──
-  if (appearance === "segmented" && size === "small" && !showLabels) {
+  if (appearance === "segmented" && size === "small") {
     return localize((
       <div
         role="radiogroup"
@@ -402,7 +405,7 @@ export function ThemeToggle({
           className,
         )}
       >
-        {THEME_OPTIONS.map(({ mode, label, Icon }) => {
+        {THEME_OPTIONS.map(({ mode, label: optionLabel, Icon }) => {
           const selected = theme === mode;
           return (
             <button
@@ -410,8 +413,8 @@ export function ThemeToggle({
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={`${label} theme`}
-              title={`${label} theme`}
+              aria-label={`${optionLabel} theme`}
+              title={`${optionLabel} mode`}
               onClick={(event) => {
                 if (selected) return;
                 const pointerOrigin =
@@ -440,17 +443,24 @@ export function ThemeToggle({
     ));
   }
 
-  // ── Standard 3-Option Segmented Tab (System, Light, Dark) for Sidebar Footer & Page Layouts ──
-  return localize((
+  // ── Standard 3-Option Icon-Only Segmented Tab with Header Label (for Sidebar Footer & Page Layouts) ──
+  const resolvedLabel =
+    label !== undefined
+      ? label
+      : appearance === "sidebar"
+        ? "Theme"
+        : null;
+
+  const content = (
     <div
       role="radiogroup"
       aria-label="Color theme selection"
       className={cx(
         "grid grid-cols-3 p-1 rounded-xl bg-background-secondary-default border border-border-button-default w-full gap-1 select-none",
-        className,
+        !resolvedLabel && className,
       )}
     >
-      {THEME_OPTIONS.map(({ mode, label, Icon }) => {
+      {THEME_OPTIONS.map(({ mode, label: optionLabel, Icon }) => {
         const selected = theme === mode;
         return (
           <button
@@ -458,8 +468,8 @@ export function ThemeToggle({
             type="button"
             role="radio"
             aria-checked={selected}
-            aria-label={`${label} theme`}
-            title={`${label} theme`}
+            aria-label={`${optionLabel} theme`}
+            title={`${optionLabel} mode`}
             onClick={(event) => {
               if (selected) return;
               const pointerOrigin =
@@ -473,24 +483,39 @@ export function ThemeToggle({
               });
             }}
             className={cx(
-              "relative flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-caption-1-medium cursor-pointer transition-all duration-150 outline-none",
+              "relative flex items-center justify-center py-2 px-2 rounded-lg cursor-pointer transition-all duration-150 outline-none",
               "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
               selected
-                ? "bg-background-primary-default text-text-primary font-semibold shadow-2xs border border-border-button-default/70"
-                : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover font-medium border border-transparent",
+                ? "bg-background-primary-default text-text-primary shadow-2xs border border-border-button-default/70"
+                : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover border border-transparent",
+              showInnerLabels && "gap-1.5 text-caption-1-medium",
             )}
           >
             <Icon
               className={cx(
-                "size-3.5 shrink-0 transition-colors",
+                showInnerLabels ? "size-3.5" : "size-4",
+                "shrink-0 transition-colors",
                 selected ? "text-foreground-icon-primary" : "text-foreground-icon-tertiary",
               )}
               aria-hidden
             />
-            <span className="truncate">{label}</span>
+            {showInnerLabels && <span className="truncate">{optionLabel}</span>}
           </button>
         );
       })}
     </div>
-  ));
+  );
+
+  if (resolvedLabel) {
+    return localize((
+      <div className={cx("w-full space-y-1.5", className)}>
+        <span className="px-1 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider block">
+          {resolvedLabel}
+        </span>
+        {content}
+      </div>
+    ));
+  }
+
+  return localize(content);
 }
