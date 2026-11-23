@@ -511,53 +511,53 @@ export default function CdnExplorerPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-[1600px] mx-auto select-none">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-display-5-bold text-text-primary">Cloudflare CDN Explorer</h1>
+    <div className="space-y-6 select-none">
+      {/* 1. Page Header (Full-width border with 0 side margins) */}
+      <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 py-5 border-b border-border-button-default bg-background-primary-default">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-title-1-medium font-bold text-text-primary tracking-tight">Cloudflare CDN Explorer</h1>
+            <p className="text-body-medium text-text-secondary mt-0.5">
+              Browse bucket objects, monitor usage metrics, and distribute assets via Cloudflare CDN
+            </p>
           </div>
-          <p className="text-body-2-regular text-text-secondary mt-1">
-            Browse bucket objects, monitor usage metrics, and distribute assets via Cloudflare CDN.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Button
-            variant="secondary"
-            size="medium"
-            leadingIcon={RiBarChartLine}
-            onClick={() => setShowMetrics((v) => !v)}
-            className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-medium shadow-2xs hover:shadow-xs transition-all"
-          >
-            {showMetrics ? 'Hide Metrics' : 'Show Metrics'}
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="medium"
-            leadingIcon={RiRefreshLine}
-            onClick={() => {
-              loadStats();
-              loadObjects();
-            }}
-            className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-medium shadow-2xs hover:shadow-xs transition-all"
-          >
-            Refresh
-          </Button>
-
-          {canManage && (
+          <div className="flex items-center gap-2.5 shrink-0">
             <Button
-              variant="primary"
+              variant="secondary"
               size="medium"
-              leadingIcon={RiUpload2Line}
-              onClick={() => setUploadModalOpen(true)}
-              className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-semibold text-[#171B18] shadow-2xs hover:shadow-xs transition-all"
+              leadingIcon={RiBarChartLine}
+              onClick={() => setShowMetrics((v) => !v)}
+              className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-medium shadow-2xs hover:shadow-xs transition-all"
             >
-              Upload Asset
+              {showMetrics ? 'Hide Metrics' : 'Show Metrics'}
             </Button>
-          )}
+
+            <Button
+              variant="secondary"
+              size="medium"
+              leadingIcon={RiRefreshLine}
+              onClick={() => {
+                loadStats();
+                loadObjects();
+              }}
+              className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-medium shadow-2xs hover:shadow-xs transition-all"
+            >
+              Refresh
+            </Button>
+
+            {canManage && (
+              <Button
+                variant="primary"
+                size="medium"
+                leadingIcon={RiUpload2Line}
+                onClick={() => setUploadModalOpen(true)}
+                className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-semibold text-[#171B18] shadow-2xs hover:shadow-xs transition-all"
+              >
+                Upload Asset
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
