@@ -19,7 +19,6 @@ import {
   RiSearchLine,
   RiFeedbackLine,
   RiMoreFill,
-  RiExpandUpDownLine,
   RiNotification3Line,
   RiHomeLine,
   RiLifebuoyLine,
@@ -34,7 +33,7 @@ import {
 import { useAuth } from '@/providers/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
-import { ModuleRegistration, OrganizationSettings } from '@/lib/api/types';
+import { ModuleRegistration } from '@/lib/api/types';
 import { cx } from '@/utils/cx';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Kbd } from '@/components/base/kbd/kbd';
@@ -94,7 +93,6 @@ export function AppSidebar() {
   const { user, logout, hasPermission } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [org, setOrg] = useState<OrganizationSettings | null>(null);
   const [activeModules, setActiveModules] = useState<ModuleRegistration[]>([]);
   const [auditCount, setAuditCount] = useState<number | undefined>(undefined);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -103,15 +101,6 @@ export function AppSidebar() {
   useEffect(() => {
     async function loadBackendData() {
       if (!user) return;
-
-      if (hasPermission('organization.read')) {
-        try {
-          const organization = await apiClient<OrganizationSettings>(API_ENDPOINTS.ORGANIZATION);
-          setOrg(organization);
-        } catch {
-          // Non-critical
-        }
-      }
 
       if (hasPermission('modules.read')) {
         try {
@@ -182,32 +171,25 @@ export function AppSidebar() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between h-14 px-3 border-b border-border-button-default shrink-0">
-            <button
-              type="button"
-              className="flex items-center gap-2 overflow-hidden min-w-0 rounded-lg p-1 -ms-1 hover:bg-background-secondary-default transition-colors text-start group cursor-pointer"
-              title="Switch workspace"
+          <div className="flex items-center justify-between h-14 px-3.5 border-b border-border-button-default shrink-0">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2.5 overflow-hidden min-w-0 rounded-lg p-1 -ms-1 hover:bg-background-secondary-default transition-colors group cursor-pointer"
             >
-              <div className="size-7 rounded-lg bg-[#171B18] border border-white/10 flex items-center justify-center p-1 shrink-0 shadow-2xs">
+              <div className="size-6 flex items-center justify-center shrink-0">
                 <Image
                   src="/brand/modus-symbol-lime-on-transparent.svg"
                   alt="Modus"
-                  width={18}
-                  height={18}
+                  width={24}
+                  height={24}
                   priority
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain transition-transform group-hover:scale-105"
                 />
               </div>
-              <div className="flex items-center gap-1.5 min-w-0 truncate">
-                <span className="text-body-2-medium font-semibold text-text-primary truncate">
-                  {org?.name || 'Modus Inc.'}
-                </span>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-background-secondary-default border border-border-button-default text-text-tertiary shrink-0">
-                  Enterprise
-                </span>
-              </div>
-              <RiExpandUpDownLine className="size-3.5 text-text-tertiary shrink-0 group-hover:text-text-primary transition-colors" />
-            </button>
+              <span className="text-body-medium font-bold text-text-primary tracking-tight truncate">
+                Modus
+              </span>
+            </Link>
             <button
               onClick={() => setCollapsed(true)}
               className="size-7.5 rounded-full border border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0 shadow-2xs flex items-center justify-center"
