@@ -1,23 +1,43 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useId, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { RiLockPasswordLine, RiMailLine, RiEyeLine, RiEyeOffLine, RiArrowRightLine } from '@remixicon/react';
+import { RiEyeLine, RiEyeOffLine } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
-import { Button } from '@/components/base/buttons/button';
-import { Input } from '@/components/base/input/input';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { toast } from '@/components/base/toast/toast';
 
 const REMEMBER_ME_KEY = 'modus_remember_identifier';
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.1.0';
 
+/* -------------------------------------------------------------------------- */
+/*  Instance footer — reads window.location.host client-side                  */
+/* -------------------------------------------------------------------------- */
+function InstanceFooter() {
+  const [host, setHost] = useState<string>('');
+  useEffect(() => {
+    setHost(window.location.host);
+  }, []);
+
+  return (
+    <footer className="login-footer">
+      <span className="login-footer__dot" aria-hidden="true" />
+      <span>{host || 'localhost'}</span>
+      <span className="login-footer__sep" aria-hidden="true">·</span>
+      <span>v{APP_VERSION}</span>
+    </footer>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Login form                                                                 */
+/* -------------------------------------------------------------------------- */
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/dashboard';
-
   const { login, setupRequired } = useAuth();
 
   const [identifier, setIdentifier] = useState('');
@@ -27,22 +47,31 @@ function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const identifierRef = useRef<HTMLInputElement>(null);
+  const errorId = useId();
+
+  /* Restore remembered identifier */
   useEffect(() => {
     try {
-      const savedIdentifier = localStorage.getItem(REMEMBER_ME_KEY);
-      if (savedIdentifier) {
-        setIdentifier(savedIdentifier);
+      const saved = localStorage.getItem(REMEMBER_ME_KEY);
+      if (saved) {
+        setIdentifier(saved);
         setRememberMe(true);
       }
-    } catch {
-      // LocalStorage access may be restricted in private browsing
-    }
+    } catch { /* private browsing */ }
   }, []);
+
+  /* Move focus to first field when an error appears */
+  useEffect(() => {
+    if (errorMessage) {
+      identifierRef.current?.focus();
+    }
+  }, [errorMessage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim() || !password.trim()) {
-      setErrorMessage('Please enter both identifier/email and password.');
+      setErrorMessage('Enter your identifier and password to continue.');
       return;
     }
 
@@ -50,25 +79,17 @@ function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      await login({
-        identifier: identifier.trim(),
-        password: password.trim(),
-      });
+      await login({ identifier: identifier.trim(), password: password.trim() });
 
       try {
-        if (rememberMe) {
-          localStorage.setItem(REMEMBER_ME_KEY, identifier.trim());
-        } else {
-          localStorage.removeItem(REMEMBER_ME_KEY);
-        }
-      } catch {
-        // Silently ignore storage errors
-      }
+        if (rememberMe) localStorage.setItem(REMEMBER_ME_KEY, identifier.trim());
+        else localStorage.removeItem(REMEMBER_ME_KEY);
+      } catch { /* ignore */ }
 
-      toast.success('Signed in successfully');
+      toast.success('Signed in');
       router.replace(decodeURIComponent(returnUrl));
     } catch (err: any) {
-      const msg = err.message || 'Authentication failed. Please verify your credentials.';
+      const msg = err.message || 'Authentication failed. Check your credentials and try again.';
       setErrorMessage(msg);
       toast.error(msg);
     } finally {
@@ -76,118 +97,182 @@ function LoginForm() {
     }
   };
 
+  const hasError = errorMessage.length > 0;
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background-full">
-      <div className="w-full max-w-md bg-background-primary-default border border-border-button-default rounded-2xl shadow-lg p-8 space-y-6">
-        {/* Modus Brand Header */}
-        <div className="flex flex-col items-center text-center space-y-2">
-          <div className="size-14 rounded-2xl bg-[#171B18] flex items-center justify-center shadow-sm p-3 border border-border-button-default">
-            <Image
-              src="/logo.svg"
-              alt="Modus Logo"
-              width={40}
-              height={35}
-              priority
-              className="w-full h-full object-contain"
-            />
+    <div className="login-page">
+      {/* ── Top-left brand chrome ── */}
+      <div className="login-brand" aria-label="Modus">
+        <Image
+          src="/brand/modus-symbol-lime-on-transparent.svg"
+          alt=""
+          width={20}
+          height={18}
+          priority
+          aria-hidden
+        />
+        <span className="login-brand__wordmark">Modus</span>
+      </div>
+
+      {/* ── Centered form panel ── */}
+      <main className="login-center">
+        <div className="login-card">
+          {/* Setup-required notice */}
+          {setupRequired && (
+            <div className="login-notice" role="note">
+              Setup is required.{' '}
+              <button
+                type="button"
+                onClick={() => router.push('/setup')}
+                className="login-notice__link"
+              >
+                Start setup →
+              </button>
+            </div>
+          )}
+
+          {/* Heading */}
+          <div className="login-heading-block">
+            <h1 className="login-heading">Sign in</h1>
+            <p className="login-subheading">Use your work email or Human ID.</p>
           </div>
-          <h1 className="text-title-2-medium text-text-primary">Sign in to Modus</h1>
-          <p className="text-body-medium text-text-secondary">
-            Self-hosted modular business management system
+
+          <form onSubmit={handleSubmit} noValidate className="login-form">
+            {/* Identifier */}
+            <div className="login-field">
+              <label htmlFor="login-identifier" className="login-label">
+                Email or Human ID
+              </label>
+              <input
+                ref={identifierRef}
+                id="login-identifier"
+                name="username"
+                autoComplete="username"
+                type="text"
+                inputMode="email"
+                className="login-input login-input--mono"
+                placeholder="admin@modus.local or MOD-10001"
+                value={identifier}
+                onChange={(e) => {
+                  setIdentifier(e.target.value);
+                  if (errorMessage) setErrorMessage('');
+                }}
+                aria-invalid={hasError ? true : undefined}
+                aria-describedby={hasError ? errorId : undefined}
+                required
+                autoFocus
+              />
+            </div>
+
+            {/* Password */}
+            <div className="login-field">
+              <label htmlFor="login-password" className="login-label">
+                Password
+              </label>
+              <div className="login-input-wrap">
+                <input
+                  id="login-password"
+                  name="current-password"
+                  autoComplete="current-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="login-input"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
+                  aria-invalid={hasError ? true : undefined}
+                  aria-describedby={hasError ? errorId : undefined}
+                  required
+                />
+                <button
+                  type="button"
+                  className="login-eye"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((p) => !p)}
+                >
+                  {showPassword ? (
+                    <RiEyeOffLine className="login-eye__icon" aria-hidden />
+                  ) : (
+                    <RiEyeLine className="login-eye__icon" aria-hidden />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember me + Forgot password */}
+            <div className="login-row">
+              <label className="login-remember">
+                <input
+                  type="checkbox"
+                  className="login-checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span>Remember me</span>
+              </label>
+              <Link href="/forgot-password" className="login-forgot">
+                Forgot password?
+              </Link>
+            </div>
+
+            {/* Error — inline, reserved height so layout doesn't shift */}
+            <div
+              id={errorId}
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+              className={`login-error${hasError ? ' login-error--visible' : ''}`}
+            >
+              {errorMessage}
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              className="login-btn"
+              disabled={isSubmitting}
+              aria-disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Spinner size="sm" aria-hidden className="text-[#252923]" />
+                  <span>Signing in…</span>
+                </>
+              ) : (
+                'Sign in'
+              )}
+            </button>
+          </form>
+
+          {/* Under-form note */}
+          <p className="login-access-note">
+            Need access?{' '}
+            <span className="login-access-note__em">Contact your administrator.</span>
           </p>
         </div>
+      </main>
 
-        {setupRequired && (
-          <div className="p-3 bg-accent-100/60 border border-accent-300 rounded-xl text-caption-1-medium text-accent-900 flex items-center justify-between">
-            <span>Initial setup is pending on this instance.</span>
-            <button
-              onClick={() => router.push('/setup')}
-              className="font-bold underline ml-2"
-            >
-              Start Setup
-            </button>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-caption-1-medium rounded-xl">
-            {errorMessage}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Email or Human ID"
-            placeholder="admin@modus.local or MOD-10001"
-            value={identifier}
-            onChange={(val) => setIdentifier(val)}
-            leadingIcon={RiMailLine}
-            isRequired
-            autoFocus
-          />
-
-          <div className="relative">
-            <Input
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
-              value={password}
-              onChange={(val) => setPassword(val)}
-              leadingIcon={RiLockPasswordLine}
-              isRequired
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-8 text-text-tertiary hover:text-text-primary p-1"
-              tabIndex={-1}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <RiEyeOffLine className="size-4" /> : <RiEyeLine className="size-4" />}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <Checkbox
-              isSelected={rememberMe}
-              onChange={(val) => setRememberMe(val)}
-              size="sm"
-            >
-              Remember me
-            </Checkbox>
-            <Link
-              href="/forgot-password"
-              className="text-caption-1-medium text-text-secondary hover:text-text-primary hover:underline transition-colors focus:outline-none focus:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="medium"
-            className="w-full justify-center font-bold"
-            disabled={isSubmitting}
-            trailingIcon={RiArrowRightLine}
-          >
-            {isSubmitting ? 'Authenticating...' : 'Sign In'}
-          </Button>
-        </form>
-
-        <div className="pt-2 text-center border-t border-separator-border text-caption-2-medium text-text-tertiary">
-          Secured with Argon2 password hashing & rotating JWT sessions
-        </div>
-      </div>
+      {/* ── Bottom instance info ── */}
+      <InstanceFooter />
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background-full" />}>
+    <Suspense
+      fallback={
+        <div
+          className="login-page"
+          aria-busy="true"
+          aria-label="Loading sign-in page"
+        />
+      }
+    >
       <LoginForm />
     </Suspense>
   );
 }
-
