@@ -145,7 +145,7 @@ function LoginForm() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold tracking-tight text-text-primary">Sign in</h1>
             <p className="text-sm text-text-secondary mt-1.5">
-              Use your work email or Human ID to access your workspace.
+              Use your work email or ID to access your workspace.
             </p>
           </div>
 
@@ -167,44 +167,44 @@ function LoginForm() {
             {/* BoardUI Identifier Input */}
             <Input
               ref={identifierRef}
-              label="Email or Human ID"
+              label="Email or ID"
               placeholder="admin@modus.local or MOD-10001"
               value={identifier}
               onChange={(val) => {
                 setIdentifier(val);
                 if (errorMessage) setErrorMessage('');
               }}
-              fieldClassName="!h-11 !rounded-xl !bg-[#FAFBF8] dark:!bg-[#222720] border border-border-button-default focus-within:!border-[#8DBA20] focus-within:!ring-2 focus-within:!ring-[#A5D632]/25"
+              fieldClassName="!h-11 px-3.5 !rounded-xl !bg-white dark:!bg-[#1D211D] border border-[#E4E8DD] dark:border-[#2C332A] hover:border-[#CCD2C2] dark:hover:border-[#3D473A] focus-within:!border-[#8DBA20] focus-within:!ring-3 focus-within:!ring-[#A5D632]/20 !ring-0 transition-all duration-150 shadow-2xs"
               autoFocus
             />
 
             {/* BoardUI Password Input with Toggle */}
-            <div className="relative">
-              <Input
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={password}
-                onChange={(val) => {
-                  setPassword(val);
-                  if (errorMessage) setErrorMessage('');
-                }}
-                fieldClassName="!h-11 !rounded-xl !bg-[#FAFBF8] dark:!bg-[#222720] border border-border-button-default focus-within:!border-[#8DBA20] focus-within:!ring-2 focus-within:!ring-[#A5D632]/25 pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                aria-pressed={showPassword}
-                className="absolute right-2.5 top-[30px] size-7 rounded-lg text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-[#8DBA20]"
-              >
-                {showPassword ? (
-                  <RiEyeOffLine className="size-4" aria-hidden />
-                ) : (
-                  <RiEyeLine className="size-4" aria-hidden />
-                )}
-              </button>
-            </div>
+            <Input
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              value={password}
+              onChange={(val) => {
+                setPassword(val);
+                if (errorMessage) setErrorMessage('');
+              }}
+              fieldClassName="!h-11 px-3.5 !rounded-xl !bg-white dark:!bg-[#1D211D] border border-[#E4E8DD] dark:border-[#2C332A] hover:border-[#CCD2C2] dark:hover:border-[#3D473A] focus-within:!border-[#8DBA20] focus-within:!ring-3 focus-within:!ring-[#A5D632]/20 !ring-0 transition-all duration-150 shadow-2xs"
+              trailingAddon={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  className="size-7 rounded-lg text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8DBA20]"
+                >
+                  {showPassword ? (
+                    <RiEyeOffLine className="size-4" aria-hidden />
+                  ) : (
+                    <RiEyeLine className="size-4" aria-hidden />
+                  )}
+                </button>
+              }
+            />
 
             {/* BoardUI Checkbox & Forgot Password */}
             <div className="flex items-center justify-between pt-1">

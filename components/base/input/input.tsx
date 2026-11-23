@@ -262,6 +262,7 @@ export interface InputProps
       | "leadingIcon"
       | "trailingIcon"
       | "leadingAddon"
+      | "trailingAddon"
       | "fieldClassName"
       | "groupRef"
       | "ref"

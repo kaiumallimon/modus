@@ -20,8 +20,8 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 999px #FAFBF8 inset !important;
-  box-shadow: 0 0 0 999px #FAFBF8 inset !important;
+  -webkit-box-shadow: 0 0 0 999px #ffffff inset !important;
+  box-shadow: 0 0 0 999px #ffffff inset !important;
   -webkit-text-fill-color: #171B18 !important;
   caret-color: #171B18 !important;
   transition: background-color 9999s ease;
@@ -31,8 +31,8 @@ input:-webkit-autofill:active {
 .dark input:-webkit-autofill:hover,
 .dark input:-webkit-autofill:focus,
 .dark input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 999px #222720 inset !important;
-  box-shadow: 0 0 0 999px #222720 inset !important;
+  -webkit-box-shadow: 0 0 0 999px #1D211D inset !important;
+  box-shadow: 0 0 0 999px #1D211D inset !important;
   -webkit-text-fill-color: #F3F5EE !important;
   caret-color: #F3F5EE !important;
 }
