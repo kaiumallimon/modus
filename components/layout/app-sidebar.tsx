@@ -6,16 +6,22 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   RiDashboardLine,
-  RiBuildingLine,
   RiUserLine,
   RiShieldUserLine,
-  RiAppsLine,
+  RiBox3Line,
   RiSettings4Line,
   RiFileHistoryLine,
   RiLogoutBoxRLine,
-  RiMenuFoldLine,
-  RiMenuUnfoldLine,
-  RiBox3Line,
+  RiArrowLeftSLine,
+  RiArrowRightSLine,
+  RiSearchLine,
+  RiHeartPulseLine,
+  RiGitMergeLine,
+  RiLineChartLine,
+  RiPuzzle2Line,
+  RiQuestionLine,
+  RiFeedbackLine,
+  RiRocket2Line,
 } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
 import { apiClient } from '@/lib/api/client';
@@ -23,25 +29,28 @@ import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import { ModuleRegistration } from '@/lib/api/types';
 import { cx } from '@/utils/cx';
 import { Avatar } from '@/components/base/avatar/avatar';
+import { Counter } from '@/components/base/badges/counter';
+import { Kbd } from '@/components/base/kbd/kbd';
 
 interface NavItemConfig {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   permission?: string;
+  badge?: number | string;
 }
 
-const CORE_NAV_ITEMS: NavItemConfig[] = [
+const MAIN_MENU_ITEMS: NavItemConfig[] = [
   {
     label: 'Dashboard',
     href: '/dashboard',
     icon: RiDashboardLine,
   },
   {
-    label: 'Organization',
-    href: '/organization',
-    icon: RiBuildingLine,
-    permission: 'organization.read',
+    label: 'Modules',
+    href: '/modules',
+    icon: RiBox3Line,
+    permission: 'modules.read',
   },
   {
     label: 'Users',
@@ -50,46 +59,63 @@ const CORE_NAV_ITEMS: NavItemConfig[] = [
     permission: 'users.read',
   },
   {
-    label: 'Roles & Permissions',
+    label: 'Roles & Access',
     href: '/roles',
     icon: RiShieldUserLine,
     permission: 'roles.read',
-  },
-  {
-    label: 'Module Registry',
-    href: '/modules',
-    icon: RiAppsLine,
-    permission: 'modules.read',
-  },
-  {
-    label: 'System Settings',
-    href: '/settings',
-    icon: RiSettings4Line,
-    permission: 'settings.read',
   },
   {
     label: 'Audit Logs',
     href: '/audit-logs',
     icon: RiFileHistoryLine,
     permission: 'audit.read',
+    badge: 33,
   },
+];
+
+const TOOLS_ITEMS: NavItemConfig[] = [
+  {
+    label: 'Health & Status',
+    href: '/dashboard',
+    icon: RiHeartPulseLine,
+  },
+  {
+    label: 'Automation',
+    href: '/settings',
+    icon: RiGitMergeLine,
+  },
+  {
+    label: 'Analytics',
+    href: '/dashboard',
+    icon: RiLineChartLine,
+  },
+  {
+    label: 'Integrations',
+    href: '/modules',
+    icon: RiPuzzle2Line,
+  },
+];
+
+const WORKSPACE_ITEMS = [
+  { label: 'Core Platform', color: 'bg-accent-500', count: 5, href: '/modules' },
+  { label: 'Extensions & Addons', color: 'bg-purple-500', count: 4, href: '/modules' },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout, hasPermission } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeModules, setActiveModules] = useState<ModuleRegistration[]>([]);
 
   useEffect(() => {
     async function loadActiveModules() {
       try {
         const modules = await apiClient<ModuleRegistration[]>(API_ENDPOINTS.MODULES);
-        // Business modules that are active and not core
         const businessModules = modules.filter((m) => m.isActivated && !m.isCore);
         setActiveModules(businessModules);
       } catch {
-        // Non-critical if modules fail to load
+        // Non-critical
       }
     }
 
@@ -98,7 +124,7 @@ export function AppSidebar() {
     }
   }, [user, hasPermission]);
 
-  const visibleCoreNav = CORE_NAV_ITEMS.filter((item) => {
+  const visibleMainMenu = MAIN_MENU_ITEMS.filter((item) => {
     if (!item.permission) return true;
     return hasPermission(item.permission);
   });
@@ -106,84 +132,124 @@ export function AppSidebar() {
   return (
     <aside
       className={cx(
-        'relative flex flex-col bg-background-primary-default border-r border-border-button-default transition-all duration-300 ease-in-out shrink-0 z-30 select-none shadow-sm',
-        collapsed ? 'w-16' : 'w-64'
+        'relative flex flex-col bg-background-primary-default border-r border-border-button-default transition-all duration-300 ease-in-out shrink-0 z-30 select-none shadow-xs',
+        collapsed ? 'w-18' : 'w-64'
       )}
     >
-      {/* Brand Header */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-separator-border">
-        <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="size-8 rounded-lg bg-[#171B18] flex items-center justify-center shrink-0 p-1.5 shadow-sm border border-border-button-default">
+      {/* Workspace / Org Header */}
+      <div className="flex items-center justify-between h-16 px-3.5 border-b border-separator-border">
+        <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden min-w-0">
+          <div className="size-9 rounded-xl bg-[#171B18] flex items-center justify-center shrink-0 p-2 shadow-sm border border-border-button-default">
             <Image
               src="/logo.svg"
               alt="Modus"
-              width={22}
+              width={20}
               height={20}
               priority
               className="w-full h-full object-contain"
             />
           </div>
           {!collapsed && (
-            <div className="flex flex-col truncate">
-              <span className="font-bold text-text-primary text-title-3-semibold tracking-tight">Modus</span>
-              <span className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">Self-Hosted</span>
+            <div className="flex flex-col min-w-0 truncate">
+              <span className="font-bold text-text-primary text-body-medium tracking-tight truncate">
+                Modus Enterprise
+              </span>
+              <span className="text-[11px] text-text-tertiary font-medium">Self-Hosted · v1.0.0</span>
             </div>
           )}
         </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors"
+          className="p-1 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? <RiMenuUnfoldLine className="size-5" /> : <RiMenuFoldLine className="size-5" />}
+          {collapsed ? <RiArrowRightSLine className="size-4" /> : <RiArrowLeftSLine className="size-4" />}
         </button>
       </div>
 
-      {/* Nav items list */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      {/* Quick Search Bar */}
+      <div className="px-3 pt-3 pb-1">
+        {collapsed ? (
+          <button
+            onClick={() => setCollapsed(false)}
+            className="w-full h-9 rounded-xl bg-background-secondary-default border border-border-button-default flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors"
+            title="Search (⌘K)"
+          >
+            <RiSearchLine className="size-4" />
+          </button>
+        ) : (
+          <div className="relative flex items-center">
+            <RiSearchLine className="absolute start-2.5 size-4 text-text-tertiary pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-9 ps-8 pe-12 rounded-xl bg-background-secondary-default border border-border-button-default text-body-2-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+            />
+            <div className="absolute end-2 flex items-center pointer-events-none">
+              <Kbd>⌘K</Kbd>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Nav List */}
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+        {/* MAIN MENU */}
         <div>
           {!collapsed && (
-            <p className="px-3 mb-2 text-caption-2-medium text-text-tertiary uppercase tracking-wider">
-              Core System
+            <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+              Main Menu
             </p>
           )}
-          <nav className="space-y-1">
-            {visibleCoreNav.map((item) => {
+          <nav className="space-y-0.5">
+            {visibleMainMenu.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
               return (
                 <Link
-                  key={item.href}
+                  key={item.label}
                   href={item.href}
                   className={cx(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-body-medium transition-colors font-medium',
+                    'relative flex items-center justify-between px-2.5 py-2 rounded-xl text-body-medium transition-all duration-150',
                     isActive
-                      ? 'bg-accent-50 text-accent-800 font-semibold shadow-2xs'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
+                      ? 'bg-accent-50/70 dark:bg-accent-950/30 text-accent-950 dark:text-accent-300 font-semibold shadow-2xs before:absolute before:inset-y-1.5 before:start-0 before:w-1 before:rounded-full before:bg-accent-500'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default font-medium'
                   )}
                   title={collapsed ? item.label : undefined}
                 >
-                  <Icon className={cx('size-5 shrink-0', isActive ? 'text-accent-600' : 'text-text-tertiary')} />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Icon
+                      className={cx(
+                        'size-5 shrink-0 transition-colors',
+                        isActive ? 'text-accent-600 dark:text-accent-400' : 'text-text-tertiary'
+                      )}
+                    />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </div>
+                  {!collapsed && item.badge !== undefined && (
+                    <Counter color="neutral">{item.badge}</Counter>
+                  )}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        {/* Active Dynamic Modules Section */}
+        {/* Dynamic Registered Modules (if any) */}
         {activeModules.length > 0 && (
           <div>
             {!collapsed && (
-              <p className="px-3 mb-2 text-caption-2-medium text-text-tertiary uppercase tracking-wider flex items-center justify-between">
-                <span>Modules</span>
-                <span className="text-[10px] bg-accent-100 text-accent-700 px-1.5 py-0.5 rounded-full font-bold">
+              <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider flex items-center justify-between">
+                <span>Active Modules</span>
+                <span className="text-[10px] bg-accent-100 dark:bg-accent-950 text-accent-800 dark:text-accent-300 px-1.5 py-0.5 rounded-full font-bold">
                   {activeModules.length}
                 </span>
               </p>
             )}
-            <nav className="space-y-1">
+            <nav className="space-y-0.5">
               {activeModules.map((mod) => {
                 const modHref = `/modules/${mod.id}`;
                 const isActive = pathname === modHref;
@@ -192,19 +258,121 @@ export function AppSidebar() {
                     key={mod.id}
                     href={modHref}
                     className={cx(
-                      'flex items-center gap-3 px-3 py-2 rounded-lg text-body-medium transition-colors font-medium',
+                      'relative flex items-center justify-between px-2.5 py-2 rounded-xl text-body-medium transition-all duration-150',
                       isActive
-                        ? 'bg-accent-50 text-accent-800 font-semibold shadow-2xs'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
+                        ? 'bg-accent-50/70 dark:bg-accent-950/30 text-accent-950 dark:text-accent-300 font-semibold before:absolute before:inset-y-1.5 before:start-0 before:w-1 before:rounded-full before:bg-accent-500'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default font-medium'
                     )}
                     title={collapsed ? mod.name : undefined}
                   >
-                    <RiBox3Line className={cx('size-5 shrink-0', isActive ? 'text-accent-600' : 'text-text-tertiary')} />
-                    {!collapsed && <span className="truncate">{mod.name}</span>}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <RiBox3Line className={cx('size-5 shrink-0', isActive ? 'text-accent-600' : 'text-text-tertiary')} />
+                      {!collapsed && <span className="truncate">{mod.name}</span>}
+                    </div>
                   </Link>
                 );
               })}
             </nav>
+          </div>
+        )}
+
+        {/* TOOLS */}
+        <div>
+          {!collapsed && (
+            <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+              Tools
+            </p>
+          )}
+          <nav className="space-y-0.5">
+            {TOOLS_ITEMS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-body-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors font-medium"
+                  title={collapsed ? item.label : undefined}
+                >
+                  <Icon className="size-5 shrink-0 text-text-tertiary" />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* WORKSPACE */}
+        <div>
+          {!collapsed && (
+            <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+              Workspace
+            </p>
+          )}
+          <nav className="space-y-0.5">
+            {WORKSPACE_ITEMS.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center justify-between px-2.5 py-2 rounded-xl text-body-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors font-medium"
+                title={collapsed ? item.label : undefined}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className={cx('size-2 rounded-full shrink-0', item.color)} />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </div>
+                {!collapsed && (
+                  <span className="text-[11px] text-text-tertiary font-medium">
+                    {item.count}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* Bottom Helper Links */}
+        <div className="pt-2 border-t border-separator-border space-y-0.5">
+          <button
+            type="button"
+            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors"
+            title={collapsed ? 'Help Center' : undefined}
+          >
+            <RiQuestionLine className="size-4 shrink-0 text-text-tertiary" />
+            {!collapsed && <span>Help Center</span>}
+          </button>
+          <button
+            type="button"
+            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors"
+            title={collapsed ? 'Feedback' : undefined}
+          >
+            <RiFeedbackLine className="size-4 shrink-0 text-text-tertiary" />
+            {!collapsed && <span>Feedback</span>}
+          </button>
+          <Link
+            href="/settings"
+            className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors"
+            title={collapsed ? 'Settings' : undefined}
+          >
+            <RiSettings4Line className="size-4 shrink-0 text-text-tertiary" />
+            {!collapsed && <span>Settings</span>}
+          </Link>
+        </div>
+
+        {/* Upgrade / Status Card */}
+        {!collapsed && (
+          <div className="rounded-2xl border border-border-button-default bg-background-secondary-default/70 p-3 shadow-2xs hover:bg-background-secondary-hover transition-colors cursor-pointer group">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-xl bg-accent-500/15 dark:bg-accent-500/20 text-accent-700 dark:text-accent-400 flex items-center justify-center shrink-0">
+                <RiRocket2Line className="size-4.5" />
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-caption-1-semibold text-text-primary truncate group-hover:text-accent-700 transition-colors">
+                  System Operational
+                </span>
+                <span className="text-[11px] text-text-tertiary truncate">All nodes connected</span>
+              </div>
+              <RiArrowRightSLine className="size-4 text-text-tertiary group-hover:text-text-primary transition-colors shrink-0" />
+            </div>
           </div>
         )}
       </div>
@@ -222,17 +390,17 @@ export function AppSidebar() {
             {!collapsed && (
               <div className="flex flex-col min-w-0 truncate">
                 <span className="text-body-medium font-semibold text-text-primary truncate">
-                  {user?.firstName} {user?.lastName}
+                  {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
                 </span>
                 <span className="text-caption-2-medium text-text-tertiary uppercase truncate">
-                  {user?.role?.replace('_', ' ')}
+                  {user?.role?.replace('_', ' ') || 'Super Admin'}
                 </span>
               </div>
             )}
           </div>
           <button
             onClick={() => logout()}
-            className="p-1.5 rounded-md text-text-tertiary hover:text-text-destructive hover:bg-background-tertiary-error transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-text-tertiary hover:text-text-destructive hover:bg-background-tertiary-error transition-colors shrink-0"
             title="Log out"
             aria-label="Log out"
           >
