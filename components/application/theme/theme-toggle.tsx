@@ -329,7 +329,7 @@ export function ThemeToggle({
           });
         }}
         className={cx(
-          "flex size-8 cursor-pointer items-center justify-center rounded-xl",
+          "flex size-8 cursor-pointer items-center justify-center rounded-full",
           "border border-border-button-default bg-background-secondary-default",
           "text-foreground-icon-secondary transition-colors duration-150 ease",
           "hover:bg-background-secondary-hover hover:text-foreground-icon-primary shadow-2xs",

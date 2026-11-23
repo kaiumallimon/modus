@@ -162,7 +162,7 @@ export function AppSidebar() {
           <div className="flex items-center justify-center h-14 border-b border-border-button-default px-2 shrink-0">
             <button
               onClick={() => setCollapsed(false)}
-              className="group relative size-9 rounded-lg flex items-center justify-center hover:bg-background-secondary-default transition-all duration-150"
+              className="group relative size-9 rounded-full flex items-center justify-center hover:bg-background-secondary-default transition-all duration-150"
               title="Expand sidebar"
               aria-label="Expand sidebar"
             >
@@ -210,7 +210,7 @@ export function AppSidebar() {
             </button>
             <button
               onClick={() => setCollapsed(true)}
-              className="p-1 rounded-lg border border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0 shadow-2xs"
+              className="size-7.5 rounded-full border border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0 shadow-2xs flex items-center justify-center"
               title="Collapse sidebar"
               aria-label="Collapse sidebar"
             >
@@ -219,13 +219,13 @@ export function AppSidebar() {
           </div>
         )}
 
-        {/* Quick Search Bar (Vercel Find Style) */}
+        {/* Quick Search Bar (Pilled Vercel Find Style) */}
         <div className="px-3 pt-3 pb-2 shrink-0">
           {collapsed ? (
             <div className="flex justify-center">
               <button
                 onClick={() => setCollapsed(false)}
-                className="size-8.5 rounded-lg bg-background-secondary-default border border-border-button-default flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-hover transition-colors shadow-2xs"
+                className="size-8.5 rounded-full bg-background-secondary-default border border-border-button-default flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-hover transition-colors shadow-2xs"
                 title="Find (F)"
                 aria-label="Find"
               >
@@ -234,16 +234,16 @@ export function AppSidebar() {
             </div>
           ) : (
             <div className="relative flex items-center">
-              <RiSearchLine className="absolute start-2.5 size-4 text-text-tertiary pointer-events-none" />
+              <RiSearchLine className="absolute start-3 size-4 text-text-tertiary pointer-events-none" />
               <input
                 type="text"
                 placeholder="Find"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8.5 ps-8 pe-8 rounded-lg bg-background-secondary-default border border-border-button-default text-body-2-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all shadow-2xs"
+                className="w-full h-8.5 ps-9 pe-9 rounded-full bg-background-secondary-default border border-border-button-default text-body-2-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all shadow-2xs"
               />
-              <div className="absolute end-2 flex items-center pointer-events-none">
-                <Kbd className="bg-background-primary-default border border-border-button-default text-text-tertiary shadow-2xs text-[10px] px-1.5 py-0.5">
+              <div className="absolute end-2.5 flex items-center pointer-events-none">
+                <Kbd className="bg-background-primary-default border border-border-button-default text-text-tertiary shadow-2xs text-[10px] px-1.5 py-0.5 rounded-full">
                   F
                 </Kbd>
               </div>
@@ -378,7 +378,7 @@ export function AppSidebar() {
         </div>
 
         {/* PINNED FOOTER: Avatar, Name, Three-Dot Context Trigger, & Notifications */}
-        <div className="shrink-0 border-t border-border-button-default bg-background-primary-default p-3">
+        <div className="shrink-0 bg-background-primary-default p-3">
           <div className={cx('flex items-center justify-between gap-2', collapsed && 'flex-col justify-center')}>
             {/* Left: Avatar & Name */}
             <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
@@ -405,7 +405,7 @@ export function AppSidebar() {
               {/* Three-Dot Popover Context Menu Trigger */}
               <AriaDialogTrigger>
                 <AriaButton
-                  className="size-7.5 rounded-lg border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
+                  className="size-7.5 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
                   aria-label="User preferences and options"
                 >
                   <RiMoreFill className="size-4" />
@@ -431,7 +431,7 @@ export function AppSidebar() {
                           <Link
                             href="/settings"
                             onClick={close}
-                            className="size-7.5 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0"
+                            className="size-7.5 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0"
                             title="Settings"
                           >
                             <RiSettings3Line className="size-4.5" />
@@ -527,7 +527,7 @@ export function AppSidebar() {
               <button
                 type="button"
                 onClick={() => toast('No unread notifications', { status: 'information' })}
-                className="relative size-7.5 rounded-lg border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
+                className="relative size-7.5 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
                 title="Notifications"
                 aria-label="Notifications"
               >
