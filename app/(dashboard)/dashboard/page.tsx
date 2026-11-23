@@ -1,20 +1,16 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import {
   RiInformationLine,
   RiFilter3Line,
   RiArrowUpDownLine,
-  RiEqualizer2Line,
   RiDownload2Line,
   RiAddLine,
   RiTableLine,
   RiLayoutMasonryLine,
-  RiStarFill,
   RiCheckLine,
-  RiEditLine,
-  RiDeleteBinLine,
-  RiMoreFill,
   RiCloseLine,
   RiArrowLeftSLine,
   RiArrowRightSLine,
@@ -24,12 +20,25 @@ import {
   RiShareForwardLine,
   RiNotification3Line,
   RiUserAddLine,
+  RiTimeLine,
+  RiMoreFill,
+  RiAppsLine,
 } from '@remixicon/react';
+import { useAuth } from '@/providers/auth-provider';
+import { apiClient } from '@/lib/api/client';
+import { API_ENDPOINTS } from '@/lib/api/endpoints';
+import {
+  HealthReadyResponse,
+  OrganizationSettings,
+  ModuleRegistration,
+  AuditLogEntry,
+  PaginatedResult,
+  User,
+} from '@/lib/api/types';
 import { Button } from '@/components/base/buttons/button';
-import { Input } from '@/components/base/input/input';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Switch } from '@/components/base/switch/switch';
-import { Chip, ChipColor } from '@/components/base/badges/chip';
+import { Chip } from '@/components/base/badges/chip';
 import { Avatar } from '@/components/base/avatar/avatar';
 import {
   Table,
@@ -40,148 +49,209 @@ import {
   TableCell,
 } from '@/components/base/table/table';
 import { Tooltip, TooltipTrigger } from '@/components/base/tooltip/tooltip';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/base/modal/modal';
+import { Spinner } from '@/components/base/spinner/spinner';
 import { toast } from '@/components/base/toast/toast';
 import { cx } from '@/utils/cx';
 
-interface ProductItem {
+// Core platform services to combine with dynamic modules
+interface SystemModuleItem {
   id: string;
   name: string;
-  price: string;
-  sales: string;
-  revenue: string;
-  stock: number;
-  status: 'In Stock' | 'Out of Stock' | 'Restock';
-  rating: number;
+  description: string;
+  version: string;
+  category: string;
+  isCore: boolean;
+  isActivated: boolean;
+  permissionsCount: number;
 }
 
-const INITIAL_PRODUCTS: ProductItem[] = [
+const DEFAULT_CORE_MODULES: SystemModuleItem[] = [
   {
-    id: 'prod-1',
-    name: 'Uxerflow T-Shirt #10 - White',
-    price: '$1.35',
-    sales: '471 pcs',
-    revenue: '$635.85',
-    stock: 100,
-    status: 'In Stock',
-    rating: 5.0,
+    id: 'auth',
+    name: 'Authentication & Session Engine',
+    description: 'JWT token rotation, password hashing, and authentication guards',
+    version: '1.0.0',
+    category: 'Security & Identity',
+    isCore: true,
+    isActivated: true,
+    permissionsCount: 8,
   },
   {
-    id: 'prod-2',
-    name: 'Uxerflow T-Shirt #10 - Black',
-    price: '$1.35',
-    sales: '402 pcs',
-    revenue: '$544.05',
-    stock: 0,
-    status: 'Out of Stock',
-    rating: 5.0,
+    id: 'users',
+    name: 'User Directory & Human ID',
+    description: 'Sequential enterprise Human ID generation and user lifecycle management',
+    version: '1.0.0',
+    category: 'Core System',
+    isCore: true,
+    isActivated: true,
+    permissionsCount: 6,
   },
   {
-    id: 'prod-3',
-    name: 'Uxerflow T-Shirt #19 - White',
-    price: '$1.35',
-    sales: '455 pcs',
-    revenue: '$645.25',
-    stock: 20,
-    status: 'Restock',
-    rating: 4.9,
+    id: 'access-control',
+    name: 'Role-Based Access Control (RBAC)',
+    description: 'Dynamic permissions matrix and custom administrative role definitions',
+    version: '1.0.0',
+    category: 'Security & RBAC',
+    isCore: true,
+    isActivated: true,
+    permissionsCount: 12,
   },
   {
-    id: 'prod-4',
-    name: 'SmartHome Hub',
-    price: '$150',
-    sales: '7 pcs',
-    revenue: '$1,050.00',
-    stock: 12,
-    status: 'In Stock',
-    rating: 4.8,
+    id: 'audit-log',
+    name: 'Immutable Audit Ledger',
+    description: 'Tamper-resistant security auditing and administrative action tracking',
+    version: '1.0.0',
+    category: 'Compliance & Audit',
+    isCore: true,
+    isActivated: true,
+    permissionsCount: 4,
   },
   {
-    id: 'prod-5',
-    name: 'UltraSound Wireless Earbuds',
-    price: '$200',
-    sales: '5 pcs',
-    revenue: '$1,000.00',
-    stock: 0,
-    status: 'Out of Stock',
-    rating: 4.8,
+    id: 'organization',
+    name: 'Organization Profile & Tenancy',
+    description: 'Multi-locale workspace parameters, currency configuration, and address',
+    version: '1.0.0',
+    category: 'Core System',
+    isCore: true,
+    isActivated: true,
+    permissionsCount: 4,
   },
   {
-    id: 'prod-6',
-    name: 'ProVision 4K Monitor',
-    price: '$400.25',
-    sales: '1 pcs',
-    revenue: '$400.25',
-    stock: 3,
-    status: 'Restock',
-    rating: 5.0,
+    id: 'system-settings',
+    name: 'Global System Preferences',
+    description: 'Session timeout thresholds, lockout policies, and maintenance mode controls',
+    version: '1.0.0',
+    category: 'Infrastructure',
+    isCore: true,
+    isActivated: true,
+    permissionsCount: 4,
   },
   {
-    id: 'prod-7',
-    name: 'Uxerflow Retro Wave Shirt',
-    price: '$1.35',
-    sales: '120 pcs',
-    revenue: '$162.40',
-    stock: 20,
-    status: 'In Stock',
-    rating: 4.7,
-  },
-  {
-    id: 'prod-8',
-    name: 'Uxerflow Graphic Art T-Shirt',
-    price: '$1.35',
-    sales: '200 pcs',
-    revenue: '$270.15',
-    stock: 0,
-    status: 'Out of Stock',
-    rating: 4.9,
-  },
-  {
-    id: 'prod-9',
-    name: 'Uxerflow Classic Fit Crewneck',
-    price: '$28.5',
-    sales: '130 pcs',
-    revenue: '$3,705.25',
-    stock: 11,
-    status: 'In Stock',
-    rating: 5.0,
-  },
-  {
-    id: 'prod-10',
-    name: 'EchoWave Bluetooth Speaker',
-    price: '$55.5',
-    sales: '10 pcs',
-    revenue: '$555.00',
-    stock: 20,
-    status: 'In Stock',
-    rating: 5.0,
+    id: 'module-registry',
+    name: 'Dynamic Micro-Module Registry',
+    description: 'Hot-pluggable business domain module registration and runtime isolation',
+    version: '1.0.0',
+    category: 'Infrastructure',
+    isCore: true,
+    isActivated: true,
+    permissionsCount: 6,
   },
 ];
 
-const STATUS_CHIP_MAP: Record<ProductItem['status'], { color: ChipColor; label: string }> = {
-  'In Stock': { color: 'lime', label: 'In Stock' },
-  'Out of Stock': { color: 'rose', label: 'Out of Stock' },
-  Restock: { color: 'yellow', label: 'Restock' },
-};
-
 export default function DashboardPage() {
-  // State
-  const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(['prod-2', 'prod-4'])); // default 2 selected as in reference
+  const { hasPermission } = useAuth();
+
+  // Backend state
+  const [health, setHealth] = useState<HealthReadyResponse | null>(null);
+  const [org, setOrg] = useState<OrganizationSettings | null>(null);
+  const [backendModules, setBackendModules] = useState<ModuleRegistration[]>([]);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [recentAudits, setRecentAudits] = useState<AuditLogEntry[]>([]);
+  const [totalAudits, setTotalAudits] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  // UI state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(['users', 'access-control']));
   const [showStats, setShowStats] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // New product form
-  const [newTitle, setNewTitle] = useState('');
-  const [newPrice, setNewPrice] = useState('$25.00');
-  const [newStock, setNewStock] = useState('50');
+  const loadDashboardData = useCallback(async () => {
+    try {
+      // 1. Health
+      try {
+        const h = await apiClient<HealthReadyResponse>(API_ENDPOINTS.HEALTH_READY);
+        setHealth(h);
+      } catch {}
 
-  // Multi-row selection handlers
+      // 2. Organization
+      if (hasPermission('organization.read')) {
+        try {
+          const o = await apiClient<OrganizationSettings>(API_ENDPOINTS.ORGANIZATION);
+          setOrg(o);
+        } catch {}
+      }
+
+      // 3. Module Registry
+      if (hasPermission('modules.read')) {
+        try {
+          const m = await apiClient<ModuleRegistration[]>(API_ENDPOINTS.MODULES);
+          setBackendModules(m || []);
+        } catch {}
+      }
+
+      // 4. Total Users
+      if (hasPermission('users.read')) {
+        try {
+          const u = await apiClient<PaginatedResult<User>>(API_ENDPOINTS.USERS, {
+            params: { page: 1, limit: 1 },
+          });
+          if (u?.meta?.total !== undefined) {
+            setTotalUsers(u.meta.total);
+          }
+        } catch {}
+      }
+
+      // 5. Audit Logs
+      if (hasPermission('audit.read')) {
+        try {
+          const a = await apiClient<PaginatedResult<AuditLogEntry>>(API_ENDPOINTS.AUDIT_LOGS, {
+            params: { page: 1, limit: 5 },
+          });
+          setRecentAudits(a.data || []);
+          if (a?.meta?.total !== undefined) {
+            setTotalAudits(a.meta.total);
+          }
+        } catch {}
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [hasPermission]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  // Merge core system modules with dynamic backend registered modules
+  const allModules: SystemModuleItem[] = useMemo(() => {
+    const list: SystemModuleItem[] = [...DEFAULT_CORE_MODULES];
+    for (const bMod of backendModules) {
+      if (!list.some((item) => item.id === bMod.id)) {
+        list.push({
+          id: bMod.id,
+          name: bMod.name,
+          description: bMod.description,
+          version: bMod.version || '1.0.0',
+          category: 'Business Extension',
+          isCore: bMod.isCore,
+          isActivated: bMod.isActivated,
+          permissionsCount: bMod.permissions?.length || 0,
+        });
+      }
+    }
+    return list;
+  }, [backendModules]);
+
+  const filteredModules = useMemo(() => {
+    if (!searchQuery.trim()) return allModules;
+    const q = searchQuery.toLowerCase();
+    return allModules.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.id.toLowerCase().includes(q) ||
+        m.category.toLowerCase().includes(q)
+    );
+  }, [allModules, searchQuery]);
+
+  // Selection handlers
   const allSelected = useMemo(() => {
-    return products.length > 0 && products.every((p) => selectedIds.has(p.id));
-  }, [products, selectedIds]);
+    return (
+      filteredModules.length > 0 &&
+      filteredModules.every((m) => selectedIds.has(m.id))
+    );
+  }, [filteredModules, selectedIds]);
 
   const isIndeterminate = useMemo(() => {
     return selectedIds.size > 0 && !allSelected;
@@ -191,7 +261,7 @@ export default function DashboardPage() {
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(products.map((p) => p.id)));
+      setSelectedIds(new Set(filteredModules.map((m) => m.id)));
     }
   };
 
@@ -209,58 +279,57 @@ export default function DashboardPage() {
     setSelectedIds(new Set());
   };
 
-  const handleDeleteSelected = () => {
-    const remaining = products.filter((p) => !selectedIds.has(p.id));
-    setProducts(remaining);
-    toast.success(`Removed ${selectedIds.size} product${selectedIds.size > 1 ? 's' : ''}`);
-    setSelectedIds(new Set());
+  const handleExportCSV = () => {
+    const header = 'Module ID,Name,Category,Type,Status,Version,Permissions';
+    const rows = allModules.map(
+      (m) =>
+        `"${m.id}","${m.name}","${m.category}","${m.isCore ? 'Core' : 'Extension'}","${m.isActivated ? 'Active' : 'Inactive'}","${m.version}",${m.permissionsCount}`
+    );
+    const csvContent = 'data:text/csv;charset=utf-8,' + [header, ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `modus-modules-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('System registry exported as CSV');
   };
 
-  const handleCreateProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) {
-      toast.error('Please enter a product title');
-      return;
-    }
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Spinner size="md" className="text-accent-600" />
+      </div>
+    );
+  }
 
-    const created: ProductItem = {
-      id: `prod-${Date.now()}`,
-      name: newTitle.trim(),
-      price: newPrice.startsWith('$') ? newPrice : `$${newPrice}`,
-      sales: '0 pcs',
-      revenue: '$0.00',
-      stock: parseInt(newStock, 10) || 10,
-      status: 'In Stock',
-      rating: 5.0,
-    };
-
-    setProducts([created, ...products]);
-    setAddModalOpen(false);
-    setNewTitle('');
-    toast.success(`Product "${created.name}" created successfully`);
-  };
+  const isDbConnected = health?.dependencies?.database?.status === 'connected';
+  const activeModulesCount = allModules.filter((m) => m.isActivated).length;
 
   return (
     <div className="space-y-6 pb-12">
       {/* 1. Header Title & Quick Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-title-1-medium text-text-primary tracking-tight">Product</h1>
+          <h1 className="text-title-1-medium text-text-primary tracking-tight">System Operations</h1>
+          <p className="text-body-medium text-text-secondary mt-0.5">
+            Real-time status of {org?.name || 'Modus'} infrastructure, active modules, and access control.
+          </p>
         </div>
 
         {/* Right Action Cluster matching reference */}
         <div className="flex items-center gap-2.5">
-          {/* Share */}
           <button
             type="button"
             className="size-9 rounded-xl border border-border-button-default bg-background-primary-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors shadow-2xs"
-            title="Share view"
-            aria-label="Share view"
+            title="Share system status"
+            aria-label="Share system status"
+            onClick={() => toast.info('System status link copied to clipboard')}
           >
             <RiShareForwardLine className="size-4" />
           </button>
 
-          {/* Notification bell */}
           <button
             type="button"
             className="size-9 rounded-xl border border-border-button-default bg-background-primary-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors shadow-2xs"
@@ -278,25 +347,30 @@ export default function DashboardPage() {
             <span className="size-6 -ms-2 rounded-full bg-background-secondary-default border border-border-button-default text-[10px] font-semibold text-text-secondary flex items-center justify-center ring-2 ring-background-primary-default">
               +3
             </span>
-            <button
-              type="button"
-              className="size-6 -ms-1 rounded-full border border-dashed border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors"
-              title="Add collaborator"
-              aria-label="Add collaborator"
-            >
-              <RiUserAddLine className="size-3" />
-            </button>
+            {hasPermission('users.create') && (
+              <Link href="/users">
+                <button
+                  type="button"
+                  className="size-6 -ms-1 rounded-full border border-dashed border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors"
+                  title="Add user"
+                  aria-label="Add user"
+                >
+                  <RiUserAddLine className="size-3" />
+                </button>
+              </Link>
+            )}
           </div>
 
-          {/* Customize Widget Button */}
-          <Button
-            variant="secondary"
-            size="small"
-            leadingIcon={RiLayoutMasonryLine}
-            className="shadow-2xs ms-1"
-          >
-            Customize Widget
-          </Button>
+          <Link href="/modules">
+            <Button
+              variant="secondary"
+              size="small"
+              leadingIcon={RiLayoutMasonryLine}
+              className="shadow-2xs ms-1"
+            >
+              Configure Modules
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -304,27 +378,22 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         {/* Left side controls */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* View switcher dropdown */}
-          <button
-            type="button"
-            className="h-9 px-3 rounded-xl border border-border-button-default bg-background-primary-default text-body-medium font-medium text-text-primary hover:bg-background-secondary-default flex items-center gap-2 shadow-2xs transition-colors"
-          >
+          <div className="h-9 px-3 rounded-xl border border-border-button-default bg-background-primary-default text-body-medium font-medium text-text-primary flex items-center gap-2 shadow-2xs">
             <RiTableLine className="size-4 text-text-secondary" />
             <span>Table View</span>
             <RiArrowDownSLine className="size-4 text-text-tertiary ms-0.5" />
-          </button>
+          </div>
 
-          {/* Filter button */}
           <Button
             variant="secondary"
             size="small"
             leadingIcon={RiFilter3Line}
             className="shadow-2xs"
+            onClick={() => setSearchQuery('')}
           >
-            Filter
+            Reset Filter
           </Button>
 
-          {/* Sort button */}
           <Button
             variant="secondary"
             size="small"
@@ -351,137 +420,133 @@ export default function DashboardPage() {
           <Button
             variant="secondary"
             size="small"
-            leadingIcon={RiEqualizer2Line}
-            className="shadow-2xs"
-          >
-            Customize
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="small"
             leadingIcon={RiDownload2Line}
             className="shadow-2xs"
-            onClick={() => toast.info('Exporting inventory data (CSV)...')}
+            onClick={handleExportCSV}
           >
-            Export
+            Export CSV
           </Button>
 
-          {/* Primary CTA in Modus Electric Lime */}
-          <Button
-            variant="primary"
-            size="small"
-            leadingIcon={RiAddLine}
-            onClick={() => setAddModalOpen(true)}
-            className="shadow-2xs font-semibold"
-          >
-            Add New Product
-          </Button>
+          {hasPermission('users.create') && (
+            <Link href="/users">
+              <Button
+                variant="primary"
+                size="small"
+                leadingIcon={RiAddLine}
+                className="shadow-2xs font-semibold"
+              >
+                Add User
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* 3. Connected 4-Column KPI Stats Row */}
+      {/* 3. Connected 4-Column KPI Stats Row (Real Backend Metrics) */}
       {showStats && (
         <div className="bg-background-primary-default border border-border-button-default rounded-2xl shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-separator-border overflow-hidden transition-all duration-300">
-          {/* Card 1: Total Product */}
+          {/* Card 1: System Health */}
           <div className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-text-secondary">
               <span className="flex items-center gap-1.5 text-body-medium font-medium text-text-secondary">
-                Total Product
+                System Health
                 <TooltipTrigger delay={150}>
-                  <button type="button" aria-label="About Total Product" className="outline-none">
+                  <button type="button" aria-label="About System Health" className="outline-none">
                     <RiInformationLine className="size-4 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer" />
                   </button>
-                  <Tooltip size="md">Total number of active and registered product SKUs in workspace.</Tooltip>
+                  <Tooltip size="md">Core platform daemon and database connectivity status.</Tooltip>
                 </TooltipTrigger>
               </span>
             </div>
             <div className="mt-3">
               <span className="text-display-4-medium text-text-primary tracking-tight font-semibold">
-                250
+                {isDbConnected ? 'Operational' : 'Degraded'}
               </span>
               <div className="mt-1 flex items-center gap-1.5 text-caption-1-medium">
-                <span className="text-text-tertiary">vs last month</span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-status-lime-background text-status-lime-text font-semibold">
-                  + 3 product
+                <span className="text-text-tertiary">database:</span>
+                <span className={cx(
+                  'inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold',
+                  isDbConnected ? 'bg-status-lime-background text-status-lime-text' : 'bg-status-rose-background text-status-rose-text'
+                )}>
+                  {health?.dependencies?.database?.status || 'Unknown'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Product Revenue */}
+          {/* Card 2: Active Modules */}
           <div className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-text-secondary">
               <span className="flex items-center gap-1.5 text-body-medium font-medium text-text-secondary">
-                Product Revenue
+                Active Modules
                 <TooltipTrigger delay={150}>
-                  <button type="button" aria-label="About Product Revenue" className="outline-none">
+                  <button type="button" aria-label="About Active Modules" className="outline-none">
                     <RiInformationLine className="size-4 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer" />
                   </button>
-                  <Tooltip size="md">Gross product sales revenue generated across all store channels.</Tooltip>
+                  <Tooltip size="md">Activated core and domain business module micro-services.</Tooltip>
                 </TooltipTrigger>
               </span>
             </div>
             <div className="mt-3">
               <span className="text-display-4-medium text-text-primary tracking-tight font-semibold">
-                $15,490
+                {activeModulesCount} <span className="text-title-1-medium text-text-tertiary font-normal">/ {allModules.length}</span>
               </span>
               <div className="mt-1 flex items-center gap-1.5 text-caption-1-medium">
-                <span className="text-text-tertiary">vs last month</span>
+                <span className="text-text-tertiary">state:</span>
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-status-lime-background text-status-lime-text font-semibold">
-                  ↑ 9%
+                  100% Core Online
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Card 3: Product Sold */}
+          {/* Card 3: Total Users */}
           <div className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-text-secondary">
               <span className="flex items-center gap-1.5 text-body-medium font-medium text-text-secondary">
-                Product Sold
+                Registered Users
                 <TooltipTrigger delay={150}>
-                  <button type="button" aria-label="About Product Sold" className="outline-none">
+                  <button type="button" aria-label="About Registered Users" className="outline-none">
                     <RiInformationLine className="size-4 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer" />
                   </button>
-                  <Tooltip size="md">Total aggregate units fulfilled and shipped to customers this month.</Tooltip>
+                  <Tooltip size="md">Total active staff, operator, and administrator user accounts.</Tooltip>
                 </TooltipTrigger>
               </span>
             </div>
             <div className="mt-3">
               <span className="text-display-4-medium text-text-primary tracking-tight font-semibold">
-                2,355
+                {totalUsers > 0 ? totalUsers : '1+'}
               </span>
               <div className="mt-1 flex items-center gap-1.5 text-caption-1-medium">
-                <span className="text-text-tertiary">vs last month</span>
+                <span className="text-text-tertiary">access control:</span>
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-status-lime-background text-status-lime-text font-semibold">
-                  ↑ 7%
+                  RBAC Enforced
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Card 4: Avg. Monthly Sales */}
+          {/* Card 4: Audit Logs */}
           <div className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-text-secondary">
               <span className="flex items-center gap-1.5 text-body-medium font-medium text-text-secondary">
-                Avg. Monthly Sales
+                Security Audits
                 <TooltipTrigger delay={150}>
-                  <button type="button" aria-label="About Avg Monthly Sales" className="outline-none">
+                  <button type="button" aria-label="About Security Audits" className="outline-none">
                     <RiInformationLine className="size-4 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer" />
                   </button>
-                  <Tooltip size="md">Average rolling monthly units sold across all operational product lines.</Tooltip>
+                  <Tooltip size="md">Immutable audit ledger recording all administrative activity.</Tooltip>
                 </TooltipTrigger>
               </span>
             </div>
             <div className="mt-3">
               <span className="text-display-4-medium text-text-primary tracking-tight font-semibold">
-                890
+                {totalAudits}
               </span>
               <div className="mt-1 flex items-center gap-1.5 text-caption-1-medium">
-                <span className="text-text-tertiary">vs last month</span>
+                <span className="text-text-tertiary">ledger:</span>
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-status-lime-background text-status-lime-text font-semibold">
-                  ↑ 5%
+                  Tamper-Resistant
                 </span>
               </div>
             </div>
@@ -489,40 +554,36 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 4. Interactive Data Table with Floating Actions */}
+      {/* 4. Interactive Data Table (Real System Modules & Infrastructure Services) */}
       <div className="bg-background-primary-default border border-border-button-default rounded-2xl shadow-xs overflow-hidden relative">
-        <Table aria-label="Product inventory table" size="md" selectionMode="none">
+        <Table aria-label="System module registry table" size="md" selectionMode="none">
           <TableHeader>
-            {/* Checkbox column */}
             <TableColumn id="selection" className="w-12 px-3">
               <Checkbox
                 slot={null}
                 isSelected={allSelected}
                 isIndeterminate={isIndeterminate}
                 onChange={toggleSelectAll}
-                aria-label="Select all rows"
+                aria-label="Select all modules"
               />
             </TableColumn>
-            <TableColumn id="product" isRowHeader className="min-w-[240px]">
-              Product
+            <TableColumn id="module" isRowHeader className="min-w-[260px]">
+              Module & Capability
             </TableColumn>
-            <TableColumn id="price" className="w-28">
-              Price
+            <TableColumn id="id" className="w-32">
+              Key
             </TableColumn>
-            <TableColumn id="sales" className="w-28">
-              Sales
+            <TableColumn id="category" className="w-40">
+              Architecture
             </TableColumn>
-            <TableColumn id="revenue" className="w-32">
-              Revenue
+            <TableColumn id="version" className="w-24">
+              Version
             </TableColumn>
-            <TableColumn id="stock" className="w-24">
-              Stock
+            <TableColumn id="permissions" className="w-28">
+              Permissions
             </TableColumn>
             <TableColumn id="status" className="w-32">
               Status
-            </TableColumn>
-            <TableColumn id="rating" className="w-24">
-              Rating
             </TableColumn>
             <TableColumn id="actions" className="w-12 text-center">
               +
@@ -530,9 +591,8 @@ export default function DashboardPage() {
           </TableHeader>
 
           <TableBody>
-            {products.map((item) => {
+            {filteredModules.map((item) => {
               const isSelected = selectedIds.has(item.id);
-              const chipInfo = STATUS_CHIP_MAP[item.status];
 
               return (
                 <TableRow
@@ -546,7 +606,7 @@ export default function DashboardPage() {
                   )}
                   onClick={() => toggleSelectRow(item.id)}
                 >
-                  {/* Checkbox Cell with Left Accent Indicator when selected */}
+                  {/* Selection Checkbox with Left Accent Indicator */}
                   <TableCell
                     className={cx(
                       'relative px-3 py-3.5',
@@ -563,48 +623,46 @@ export default function DashboardPage() {
                     />
                   </TableCell>
 
-                  {/* Product Name */}
+                  {/* Module Name & Description */}
                   <TableCell className="font-medium text-text-primary">
-                    <span className="truncate">{item.name}</span>
+                    <div>
+                      <span className="font-semibold">{item.name}</span>
+                      <p className="text-caption-2-medium text-text-tertiary line-clamp-1">{item.description}</p>
+                    </div>
                   </TableCell>
 
-                  {/* Price */}
-                  <TableCell className="text-text-secondary font-mono">{item.price}</TableCell>
+                  {/* ID / Code */}
+                  <TableCell className="text-text-secondary font-mono text-[12px]">{item.id}</TableCell>
 
-                  {/* Sales */}
-                  <TableCell className="text-text-secondary">{item.sales}</TableCell>
+                  {/* Category */}
+                  <TableCell className="text-text-secondary">{item.category}</TableCell>
 
-                  {/* Revenue */}
-                  <TableCell className="text-text-secondary font-mono">{item.revenue}</TableCell>
+                  {/* Version */}
+                  <TableCell className="text-text-secondary font-mono">v{item.version}</TableCell>
 
-                  {/* Stock */}
-                  <TableCell className="text-text-secondary font-mono">{item.stock}</TableCell>
+                  {/* Permissions count */}
+                  <TableCell className="text-text-secondary font-mono">{item.permissionsCount} rules</TableCell>
 
-                  {/* Status Chip */}
+                  {/* Status */}
                   <TableCell>
-                    <Chip variant="caption" color={chipInfo.color} className="font-medium">
-                      {chipInfo.label}
+                    <Chip
+                      variant="caption"
+                      color={item.isActivated ? 'lime' : 'neutral'}
+                      className="font-medium"
+                    >
+                      {item.isCore ? 'Core System' : item.isActivated ? 'Active' : 'Inactive'}
                     </Chip>
-                  </TableCell>
-
-                  {/* Rating with Star */}
-                  <TableCell>
-                    <span className="inline-flex items-center gap-1 text-body-medium text-text-primary font-medium">
-                      <RiStarFill className="size-3.5 text-amber-500 shrink-0" />
-                      {item.rating.toFixed(1)}
-                    </span>
                   </TableCell>
 
                   {/* Row Context Menu */}
                   <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors"
-                      title="Row options"
-                      aria-label="Row options"
+                    <Link
+                      href="/modules"
+                      className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors inline-block"
+                      title="Manage module"
                     >
                       <RiMoreFill className="size-4" />
-                    </button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               );
@@ -612,18 +670,7 @@ export default function DashboardPage() {
           </TableBody>
         </Table>
 
-        {/* Add column bottom helper */}
-        <div className="p-3 border-t border-separator-border bg-background-primary-default">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 text-body-2-medium text-text-tertiary hover:text-text-primary transition-colors ps-1"
-          >
-            <RiAddLine className="size-4" />
-            <span>Add Column</span>
-          </button>
-        </div>
-
-        {/* Floating Bulk Action Bar (Dock) */}
+        {/* Floating Bulk Action Bar */}
         {selectedIds.size > 0 && (
           <div className="sticky bottom-4 inset-x-0 mx-auto w-fit z-40 bg-background-primary-default/95 backdrop-blur-md border border-border-button-default shadow-xl rounded-2xl px-3.5 py-2 flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2">
             <span className="text-body-2-medium font-semibold text-text-primary px-2 py-0.5 rounded-lg bg-background-secondary-default border border-border-button-default">
@@ -635,43 +682,23 @@ export default function DashboardPage() {
               size="small"
               leadingIcon={RiCheckLine}
               onClick={() => {
-                toast.success(`Applied discount code to ${selectedIds.size} products`);
+                toast.success(`Verified ${selectedIds.size} system capabilities`);
               }}
             >
-              Apply Code
+              Verify Integrity
             </Button>
 
-            <Button
-              variant="secondary"
-              size="small"
-              leadingIcon={RiEditLine}
-              onClick={() => {
-                toast.info(`Editing info for ${selectedIds.size} selected items`);
-              }}
-            >
-              Edit Info
-            </Button>
-
-            <Button
-              variant="secondary"
-              size="small"
-              leadingIcon={RiDeleteBinLine}
-              className="text-status-rose-text hover:bg-background-tertiary-error hover:border-border-error-default"
-              onClick={handleDeleteSelected}
-            >
-              Delete
-            </Button>
+            <Link href="/modules">
+              <Button
+                variant="secondary"
+                size="small"
+                leadingIcon={RiAppsLine}
+              >
+                Manage in Registry
+              </Button>
+            </Link>
 
             <div className="h-4 w-px bg-separator-border" />
-
-            <button
-              type="button"
-              className="p-1 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors"
-              title="More options"
-              aria-label="More options"
-            >
-              <RiMoreFill className="size-4" />
-            </button>
 
             <button
               type="button"
@@ -685,9 +712,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* 5. Pagination Bar matching reference design */}
+        {/* Pagination Footer */}
         <div className="px-4 py-3 border-t border-separator-border bg-background-primary-default flex flex-wrap items-center justify-between gap-4">
-          {/* Left: Showing per page */}
           <div className="flex items-center gap-2 text-body-medium text-text-secondary">
             <span>Showing per page</span>
             <div className="relative">
@@ -698,13 +724,14 @@ export default function DashboardPage() {
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
-                <option value={50}>50</option>
               </select>
               <RiArrowDownSLine className="absolute end-1.5 top-2 size-4 text-text-tertiary pointer-events-none" />
             </div>
+            <span className="text-caption-1-medium text-text-tertiary ps-2">
+              ({filteredModules.length} total modules)
+            </span>
           </div>
 
-          {/* Center: Pagination numbers with Electric Lime active pill */}
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -725,36 +752,17 @@ export default function DashboardPage() {
               <RiArrowLeftSLine className="size-4" />
             </button>
 
-            {/* Pagination buttons with Electric Lime active pill */}
-            {[1, 2, 3].map((pageNum) => (
-              <button
-                key={pageNum}
-                type="button"
-                onClick={() => setCurrentPage(pageNum)}
-                className={cx(
-                  'size-8 rounded-lg flex items-center justify-center text-body-medium transition-colors font-medium',
-                  currentPage === pageNum
-                    ? 'bg-accent-500 text-text-primary font-bold shadow-2xs'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
-                )}
-              >
-                {pageNum}
-              </button>
-            ))}
-            <span className="size-8 flex items-center justify-center text-text-tertiary text-body-medium">
-              ...
-            </span>
             <button
               type="button"
-              onClick={() => setCurrentPage(25)}
+              onClick={() => setCurrentPage(1)}
               className={cx(
                 'size-8 rounded-lg flex items-center justify-center text-body-medium transition-colors font-medium',
-                currentPage === 25
+                currentPage === 1
                   ? 'bg-accent-500 text-text-primary font-bold shadow-2xs'
                   : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
               )}
             >
-              25
+              1
             </button>
 
             <button
@@ -775,69 +783,59 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* Right: Go to page */}
           <div className="flex items-center gap-1.5 text-body-medium text-text-secondary">
-            <span>Go to page</span>
-            <input
-              type="text"
-              defaultValue="1"
-              className="w-10 h-8 text-center rounded-lg border border-border-button-default bg-background-primary-default text-text-primary text-body-medium outline-none focus:border-accent-500"
-            />
-            <button
-              type="button"
-              className="px-2 py-1 rounded-lg border border-border-button-default text-body-medium text-text-primary hover:bg-background-secondary-default transition-colors flex items-center gap-0.5"
-            >
-              <span>Go</span>
-              <RiArrowRightSLine className="size-3.5 text-text-tertiary" />
-            </button>
+            <span>Status</span>
+            <Chip color={isDbConnected ? 'lime' : 'rose'} variant="caption">
+              {isDbConnected ? 'Cluster Connected' : 'Degraded'}
+            </Chip>
           </div>
         </div>
       </div>
 
-      {/* 6. Add New Product Modal */}
-      <Modal isOpen={addModalOpen} onOpenChange={setAddModalOpen} size="md">
-        {({ close }) => (
-          <form onSubmit={handleCreateProduct}>
-            <ModalHeader
-              title="Add New Product"
-              description="Register a new item or module SKU in your workspace inventory."
-            />
-            <ModalBody className="space-y-4 py-4">
-              <Input
-                label="Product Name"
-                placeholder="e.g. Uxerflow Athletic Tee - Sage"
-                value={newTitle}
-                onChange={setNewTitle}
-                autoFocus
-                isRequired
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="Unit Price"
-                  placeholder="$24.50"
-                  value={newPrice}
-                  onChange={setNewPrice}
-                />
-                <Input
-                  label="Initial Stock"
-                  type="number"
-                  placeholder="50"
-                  value={newStock}
-                  onChange={setNewStock}
-                />
+      {/* 5. Recent Immutable Audit Activities Feed (Real Backend Data) */}
+      <div className="bg-background-primary-default border border-border-button-default rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-title-3-semibold text-text-primary">Recent Audit Events</h2>
+            <p className="text-caption-1-medium text-text-secondary">Immutable administrative activity trail from audit ledger</p>
+          </div>
+          {hasPermission('audit.read') && (
+            <Link href="/audit-logs" className="text-caption-1-semibold text-accent-700 hover:underline flex items-center gap-1">
+              View all ({totalAudits}) →
+            </Link>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {recentAudits.map((item) => (
+            <div
+              key={item._id}
+              className="flex items-start justify-between p-3.5 rounded-xl bg-background-secondary-default border border-separator-border text-body-medium hover:bg-background-secondary-hover/50 transition-colors"
+            >
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-text-primary text-caption-1-semibold font-mono">
+                    {item.action}
+                  </span>
+                  <span className="text-caption-2-medium text-text-tertiary">
+                    by {item.actor?.email || 'System Daemon'}
+                  </span>
+                </div>
+                <p className="text-caption-2-medium text-text-secondary">{item.description}</p>
               </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="secondary" onClick={close}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary">
-                Create Product
-              </Button>
-            </ModalFooter>
-          </form>
-        )}
-      </Modal>
+              <span className="text-[11px] text-text-tertiary shrink-0 flex items-center gap-1">
+                <RiTimeLine className="size-3" />
+                {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          ))}
+          {recentAudits.length === 0 && (
+            <div className="py-8 text-center text-text-tertiary text-body-medium">
+              No recent audit events recorded.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

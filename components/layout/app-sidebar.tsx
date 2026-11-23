@@ -6,8 +6,10 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   RiDashboardLine,
+  RiBuildingLine,
   RiUserLine,
   RiShieldUserLine,
+  RiAppsLine,
   RiBox3Line,
   RiSettings4Line,
   RiFileHistoryLine,
@@ -15,15 +17,8 @@ import {
   RiArrowLeftSLine,
   RiArrowRightSLine,
   RiSearchLine,
-  RiHeartPulseLine,
-  RiGitMergeLine,
-  RiLineChartLine,
-  RiPuzzle2Line,
   RiQuestionLine,
   RiFeedbackLine,
-  RiMegaphoneLine,
-  RiShapesLine,
-  RiStackLine,
 } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
 import { apiClient } from '@/lib/api/client';
@@ -43,17 +38,17 @@ interface NavItemConfig {
   badge?: number | string;
 }
 
-const MAIN_MENU_ITEMS: NavItemConfig[] = [
+const BACKEND_NAV_ITEMS: NavItemConfig[] = [
   {
     label: 'Dashboard',
     href: '/dashboard',
     icon: RiDashboardLine,
   },
   {
-    label: 'Modules',
-    href: '/modules',
-    icon: RiBox3Line,
-    permission: 'modules.read',
+    label: 'Organization',
+    href: '/organization',
+    icon: RiBuildingLine,
+    permission: 'organization.read',
   },
   {
     label: 'Users',
@@ -68,70 +63,22 @@ const MAIN_MENU_ITEMS: NavItemConfig[] = [
     permission: 'roles.read',
   },
   {
+    label: 'Module Registry',
+    href: '/modules',
+    icon: RiAppsLine,
+    permission: 'modules.read',
+  },
+  {
+    label: 'System Settings',
+    href: '/settings',
+    icon: RiSettings4Line,
+    permission: 'settings.read',
+  },
+  {
     label: 'Audit Logs',
     href: '/audit-logs',
     icon: RiFileHistoryLine,
     permission: 'audit.read',
-    badge: 33,
-  },
-];
-
-const TOOLS_ITEMS: NavItemConfig[] = [
-  {
-    label: 'Health & Status',
-    href: '/dashboard',
-    icon: RiHeartPulseLine,
-  },
-  {
-    label: 'Automation',
-    href: '/settings',
-    icon: RiGitMergeLine,
-  },
-  {
-    label: 'Analytics',
-    href: '/dashboard',
-    icon: RiLineChartLine,
-  },
-  {
-    label: 'Integrations',
-    href: '/modules',
-    icon: RiPuzzle2Line,
-  },
-];
-
-interface WorkspaceItem {
-  label: string;
-  href: string;
-  count: number;
-  icon: React.ComponentType<{ className?: string }>;
-  iconBg: string;
-  iconColor: string;
-}
-
-const WORKSPACE_ITEMS: WorkspaceItem[] = [
-  {
-    label: 'Campaign',
-    href: '/dashboard',
-    count: 5,
-    icon: RiMegaphoneLine,
-    iconBg: 'bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800',
-    iconColor: 'text-indigo-600 dark:text-indigo-400',
-  },
-  {
-    label: 'Product Plan',
-    href: '/modules',
-    count: 4,
-    icon: RiShapesLine,
-    iconBg: 'bg-pink-50 dark:bg-pink-950/60 border border-pink-200 dark:border-pink-800',
-    iconColor: 'text-pink-600 dark:text-pink-400',
-  },
-  {
-    label: 'Core Platform',
-    href: '/settings',
-    count: 5,
-    icon: RiStackLine,
-    iconBg: 'bg-accent-100 dark:bg-accent-950/60 border border-accent-300 dark:border-accent-800',
-    iconColor: 'text-accent-700 dark:text-accent-400',
   },
 ];
 
@@ -141,28 +88,50 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModules, setActiveModules] = useState<ModuleRegistration[]>([]);
+  const [auditCount, setAuditCount] = useState<number | undefined>(undefined);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   useEffect(() => {
-    async function loadActiveModules() {
-      try {
-        const modules = await apiClient<ModuleRegistration[]>(API_ENDPOINTS.MODULES);
-        const businessModules = modules.filter((m) => m.isActivated && !m.isCore);
-        setActiveModules(businessModules);
-      } catch {
-        // Non-critical
+    async function loadBackendData() {
+      if (!user) return;
+
+      // Load active modules if permitted
+      if (hasPermission('modules.read')) {
+        try {
+          const modules = await apiClient<ModuleRegistration[]>(API_ENDPOINTS.MODULES);
+          const businessModules = modules.filter((m) => m.isActivated && !m.isCore);
+          setActiveModules(businessModules);
+        } catch {
+          // Non-critical
+        }
+      }
+
+      // Load audit log count if permitted
+      if (hasPermission('audit.read')) {
+        try {
+          const res = await apiClient<{ meta?: { total?: number } }>(API_ENDPOINTS.AUDIT_LOGS, {
+            params: { page: 1, limit: 1 },
+          });
+          if (res?.meta?.total !== undefined) {
+            setAuditCount(res.meta.total);
+          }
+        } catch {
+          // Non-critical
+        }
       }
     }
 
-    if (user && hasPermission('modules.read')) {
-      loadActiveModules();
-    }
+    loadBackendData();
   }, [user, hasPermission]);
 
-  const visibleMainMenu = MAIN_MENU_ITEMS.filter((item) => {
+  const visibleNav = BACKEND_NAV_ITEMS.filter((item) => {
     if (!item.permission) return true;
     return hasPermission(item.permission);
   });
+
+  const filteredNav = visibleNav.filter((item) =>
+    item.label.toLowerCase().includes(searchQuery.toLowerCase().trim())
+  );
 
   return (
     <>
@@ -258,17 +227,19 @@ export function AppSidebar() {
 
         {/* Nav List */}
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
-          {/* MAIN MENU */}
+          {/* CORE PLATFORM FEATURES */}
           <div>
             {!collapsed && (
               <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                Main Menu
+                Platform Navigation
               </p>
             )}
             <nav className="space-y-1">
-              {visibleMainMenu.map((item) => {
+              {filteredNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
+                const badge = item.href === '/audit-logs' ? auditCount : item.badge;
+
                 return (
                   <Link
                     key={item.label}
@@ -291,8 +262,8 @@ export function AppSidebar() {
                       />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </div>
-                    {!collapsed && item.badge !== undefined && (
-                      <Counter color="neutral">{item.badge}</Counter>
+                    {!collapsed && badge !== undefined && (
+                      <Counter color="neutral">{badge}</Counter>
                     )}
                   </Link>
                 );
@@ -300,12 +271,12 @@ export function AppSidebar() {
             </nav>
           </div>
 
-          {/* Dynamic Registered Modules (if any) */}
+          {/* Dynamic Installed Business Modules (from /api/v1/modules) */}
           {activeModules.length > 0 && (
             <div>
               {!collapsed && (
                 <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider flex items-center justify-between">
-                  <span>Active Modules</span>
+                  <span>Installed Modules</span>
                   <span className="text-[10px] bg-accent-100 dark:bg-accent-950 text-accent-800 dark:text-accent-300 px-1.5 py-0.5 rounded-full font-bold">
                     {activeModules.length}
                   </span>
@@ -339,72 +310,7 @@ export function AppSidebar() {
             </div>
           )}
 
-          {/* TOOLS */}
-          <div>
-            {!collapsed && (
-              <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                Tools
-              </p>
-            )}
-            <nav className="space-y-1">
-              {TOOLS_ITEMS.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={cx(
-                      'flex items-center rounded-xl text-body-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors font-medium',
-                      collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-2'
-                    )}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <Icon className="size-5 shrink-0 text-text-tertiary" />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* WORKSPACE with proper logos */}
-          <div>
-            {!collapsed && (
-              <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                Workspace
-              </p>
-            )}
-            <nav className="space-y-1">
-              {WORKSPACE_ITEMS.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={cx(
-                      'flex items-center justify-between rounded-xl text-body-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors font-medium',
-                      collapsed ? 'size-10 justify-center mx-auto' : 'px-2.5 py-2'
-                    )}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={cx('size-5 rounded-md flex items-center justify-center shrink-0', item.iconBg)}>
-                        <Icon className={cx('size-3.5', item.iconColor)} />
-                      </div>
-                      {!collapsed && <span className="truncate">{item.label}</span>}
-                    </div>
-                    {!collapsed && (
-                      <span className="text-[11px] text-text-tertiary font-medium">
-                        {item.count}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Bottom Helper Links */}
+          {/* Utility Links */}
           <div className="pt-2 border-t border-separator-border space-y-0.5">
             <button
               type="button"
@@ -434,10 +340,10 @@ export function AppSidebar() {
                 'flex items-center rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors',
                 collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5'
               )}
-              title={collapsed ? 'Settings' : undefined}
+              title={collapsed ? 'System Settings' : undefined}
             >
               <RiSettings4Line className="size-4 shrink-0 text-text-tertiary" />
-              {!collapsed && <span>Settings</span>}
+              {!collapsed && <span>System Settings</span>}
             </Link>
           </div>
         </div>
