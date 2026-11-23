@@ -1,7 +1,7 @@
 "use client";
 
 import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { RiComputerLine, RiMoonLine, RiSunLine } from "@remixicon/react";
 import { cx } from "@/utils/cx";
@@ -277,11 +277,9 @@ export interface ThemeToggleProps {
   transitionDuration?: number;
   /** Header label displayed above the tab control (defaults to "Theme" in sidebar appearance). Set to null or false to hide. */
   label?: string | null | false;
-  /** Explicitly control whether text labels are shown inside the tabs. Defaults to false (icon-only). */
-  showInnerLabels?: boolean;
 }
 
-/** 3-option theme control: System, Light, and Dark. */
+/** 3-option theme control: System, Light, and Dark (Pill capsule track with circular indicator). */
 export function ThemeToggle({
   collapsed = false,
   appearance = "sidebar",
@@ -289,13 +287,13 @@ export function ThemeToggle({
   size = "medium",
   transitionDuration = THEME_TRANSITION_DURATION,
   label,
-  showInnerLabels = false,
 }: ThemeToggleProps) {
   const localize = useTemplateCopy();
   const theme = useThemeMode();
+  const [mounted, setMounted] = useState(false);
 
-  // Ensures theme is synced on initial mount
   useEffect(() => {
+    setMounted(true);
     const initial = storedTheme();
     currentModeState = initial;
     applyTheme(initial, { persist: false });
@@ -401,10 +399,21 @@ export function ThemeToggle({
         role="radiogroup"
         aria-label="Theme selection"
         className={cx(
-          "inline-flex items-center gap-0.5 p-0.5 rounded-xl bg-background-secondary-default border border-border-button-default shadow-2xs select-none",
+          "relative inline-flex items-center gap-0.5 rounded-full p-0.5 bg-background-secondary-default border border-border-button-default shadow-2xs select-none",
           className,
         )}
       >
+        <span
+          aria-hidden
+          className={cx(
+            "pointer-events-none absolute top-0.5 start-0.5 size-7 rounded-full",
+            "bg-background-primary-default border border-border-button-default/70 shadow-xs",
+            mounted && "transition-transform duration-200 ease-out",
+            theme === "system" && "translate-x-0 rtl:translate-x-0",
+            theme === "light" && "translate-x-[30px] rtl:-translate-x-[30px]",
+            theme === "dark" && "translate-x-[60px] rtl:-translate-x-[60px]",
+          )}
+        />
         {THEME_OPTIONS.map(({ mode, label: optionLabel, Icon }) => {
           const selected = theme === mode;
           return (
@@ -428,11 +437,11 @@ export function ThemeToggle({
                 });
               }}
               className={cx(
-                "relative flex size-7 cursor-pointer items-center justify-center rounded-lg transition-all duration-150 outline-none",
+                "relative z-10 grid size-7 cursor-pointer place-items-center rounded-full outline-none transition-colors duration-150",
                 "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
                 selected
-                  ? "bg-background-primary-default text-text-primary shadow-2xs border border-border-button-default"
-                  : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover border border-transparent",
+                  ? "text-text-primary font-semibold"
+                  : "text-text-tertiary hover:text-text-primary",
               )}
             >
               <Icon className="size-3.5 shrink-0" aria-hidden />
@@ -443,7 +452,7 @@ export function ThemeToggle({
     ));
   }
 
-  // ── Standard 3-Option Icon-Only Segmented Tab with Header Label (for Sidebar Footer & Page Layouts) ──
+  // ── Standard 3-Option Capsule Pill Track with Sliding Thumb Indicator & Label Above ──
   const resolvedLabel =
     label !== undefined
       ? label
@@ -451,15 +460,28 @@ export function ThemeToggle({
         ? "Theme"
         : null;
 
-  const content = (
+  const pillTrack = (
     <div
       role="radiogroup"
-      aria-label="Color theme selection"
+      aria-label="Theme selection"
       className={cx(
-        "grid grid-cols-3 p-1 rounded-xl bg-background-secondary-default border border-border-button-default w-full gap-1 select-none",
+        "relative inline-flex items-center gap-1 rounded-full p-1 bg-background-secondary-default border border-border-button-default shadow-2xs select-none",
         !resolvedLabel && className,
       )}
     >
+      {/* Sliding Circular Indicator Thumb */}
+      <span
+        aria-hidden
+        className={cx(
+          "pointer-events-none absolute top-1 start-1 size-8 rounded-full",
+          "bg-background-primary-default border border-border-button-default/80 shadow-xs",
+          mounted && "transition-transform duration-200 ease-out",
+          theme === "system" && "translate-x-0 rtl:translate-x-0",
+          theme === "light" && "translate-x-9 rtl:-translate-x-9",
+          theme === "dark" && "translate-x-18 rtl:-translate-x-18",
+        )}
+      />
+
       {THEME_OPTIONS.map(({ mode, label: optionLabel, Icon }) => {
         const selected = theme === mode;
         return (
@@ -483,23 +505,14 @@ export function ThemeToggle({
               });
             }}
             className={cx(
-              "relative flex items-center justify-center py-2 px-2 rounded-lg cursor-pointer transition-all duration-150 outline-none",
+              "relative z-10 grid size-8 cursor-pointer place-items-center rounded-full outline-none transition-colors duration-150",
               "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
               selected
-                ? "bg-background-primary-default text-text-primary shadow-2xs border border-border-button-default/70"
-                : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover border border-transparent",
-              showInnerLabels && "gap-1.5 text-caption-1-medium",
+                ? "text-text-primary font-semibold"
+                : "text-text-tertiary hover:text-text-primary",
             )}
           >
-            <Icon
-              className={cx(
-                showInnerLabels ? "size-3.5" : "size-4",
-                "shrink-0 transition-colors",
-                selected ? "text-foreground-icon-primary" : "text-foreground-icon-tertiary",
-              )}
-              aria-hidden
-            />
-            {showInnerLabels && <span className="truncate">{optionLabel}</span>}
+            <Icon className="size-4 shrink-0 transition-colors" aria-hidden />
           </button>
         );
       })}
@@ -512,10 +525,12 @@ export function ThemeToggle({
         <span className="px-1 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider block">
           {resolvedLabel}
         </span>
-        {content}
+        <div className="flex items-center justify-center">
+          {pillTrack}
+        </div>
       </div>
     ));
   }
 
-  return localize(content);
+  return localize(pillTrack);
 }
