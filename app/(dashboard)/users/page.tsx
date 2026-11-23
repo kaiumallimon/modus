@@ -3,22 +3,21 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   RiUserAddLine,
-  RiSearchLine,
   RiEditLine,
   RiFilter3Line,
   RiArrowUpDownLine,
+  RiArrowUpLine,
+  RiArrowDownLine,
   RiDownloadLine,
   RiMoreFill,
   RiShieldUserLine,
   RiCloseLine,
   RiInformationLine,
-  RiArrowLeftDoubleLine,
-  RiArrowRightDoubleLine,
-  RiArrowLeftSLine,
-  RiArrowRightSLine,
   RiTableLine,
   RiUserLine,
   RiToggleLine,
+  RiCalendarLine,
+  RiRestartLine,
 } from '@remixicon/react';
 import {
   useReactTable,
@@ -48,6 +47,9 @@ import { Avatar } from '@/components/base/avatar/avatar';
 import { Modal, ModalHeader, ModalBody, ModalFooter, AlertDialog } from '@/components/base/modal/modal';
 import { Spinner } from '@/components/base/spinner/spinner';
 import { toast } from '@/components/base/toast/toast';
+import { Select, SelectItem } from '@/components/base/select/select';
+import { Pagination } from '@/components/base/pagination/pagination';
+import { SearchField } from '@/components/base/search-field/search-field';
 import { getRoleDisplayName } from '@/lib/permissions';
 import { cx } from '@/utils/cx';
 
@@ -71,7 +73,6 @@ export default function UsersPage() {
 
   // UI display preferences
   const [showStatistics, setShowStatistics] = useState(true);
-  const [jumpPage, setJumpPage] = useState('');
 
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -332,18 +333,6 @@ export default function UsersPage() {
     handleExport(selected);
   };
 
-  // Jump page handler
-  const handleJumpPage = (e: React.FormEvent) => {
-    e.preventDefault();
-    const p = parseInt(jumpPage, 10);
-    if (!isNaN(p) && p >= 1 && p <= totalPages) {
-      setPage(p);
-      setJumpPage('');
-    } else {
-      toast.error(`Please enter a page between 1 and ${totalPages}`);
-    }
-  };
-
   const getRoleChipColor = (roleStr: string): ChipColor => {
     switch (roleStr) {
       case 'SUPER_ADMIN':
@@ -395,18 +384,26 @@ export default function UsersPage() {
         cell: ({ row }) => {
           const u = row.original;
           const initials = u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : 'U';
+          const isCurrent = currentUser?._id === u._id || currentUser?.id === u.id;
           return (
             <div className="flex items-center gap-3 min-w-0">
               <Avatar
                 initials={initials}
                 size="md"
                 color={u.role === 'SUPER_ADMIN' ? 'lime' : 'blue'}
-                className="shrink-0 font-semibold"
+                className="shrink-0 font-semibold ring-1 ring-border-button-default"
               />
               <div className="flex flex-col min-w-0">
-                <span className="text-body-medium font-semibold text-text-primary truncate">
-                  {u.firstName} {u.lastName}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-body-2-medium font-semibold text-text-primary truncate">
+                    {u.firstName} {u.lastName}
+                  </span>
+                  {isCurrent && (
+                    <Chip color="lime" variant="caption" className="font-semibold text-[10px] py-0 px-1.5">
+                      You
+                    </Chip>
+                  )}
+                </div>
                 <span className="text-caption-1-regular text-text-secondary truncate">
                   {u.email}
                 </span>
@@ -420,7 +417,7 @@ export default function UsersPage() {
         header: 'User ID',
         accessorKey: 'humanId',
         cell: ({ row }) => (
-          <span className="font-mono text-caption-1-medium text-text-tertiary">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md font-mono text-caption-2-medium text-text-tertiary bg-background-secondary-default border border-separator-border">
             {row.original.humanId || '—'}
           </span>
         ),
@@ -445,9 +442,15 @@ export default function UsersPage() {
         cell: ({ row }) => {
           const isActive = row.original.isActive;
           return (
-            <Chip color={isActive ? 'lime' : 'rose'} variant="caption">
-              {isActive ? 'Active' : 'Inactive'}
-            </Chip>
+            <div className="inline-flex items-center gap-1.5">
+              <span className={cx(
+                "size-1.5 rounded-full shrink-0",
+                isActive ? "bg-accent-500 animate-pulse" : "bg-neutral-400"
+              )} />
+              <Chip color={isActive ? 'lime' : 'rose'} variant="caption">
+                {isActive ? 'Active' : 'Inactive'}
+              </Chip>
+            </div>
           );
         },
       },
@@ -463,7 +466,12 @@ export default function UsersPage() {
             day: 'numeric',
             year: 'numeric',
           });
-          return <span className="text-body-2-regular text-text-secondary">{formatted}</span>;
+          return (
+            <span className="text-body-2-regular text-text-secondary flex items-center gap-1.5">
+              <RiCalendarLine className="size-3.5 text-text-tertiary shrink-0" />
+              <span>{formatted}</span>
+            </span>
+          );
         },
       },
       {
@@ -548,25 +556,11 @@ export default function UsersPage() {
     <div className="space-y-6">
       {/* 1. Page Header (Full-width border with 0 side margins) */}
       <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 py-5 border-b border-border-button-default bg-background-primary-default">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-title-1-medium font-bold text-text-primary tracking-tight">Users</h1>
-            <p className="text-body-medium text-text-secondary mt-0.5">
-              Directory of team members, roles, credentials, and access statuses
-            </p>
-          </div>
-          <div className="flex items-center gap-2.5">
-            {hasPermission('users.create') && (
-              <Button
-                variant="primary"
-                onClick={handleOpenCreate}
-                leadingIcon={RiUserAddLine}
-                className="font-semibold"
-              >
-                Add New User
-              </Button>
-            )}
-          </div>
+        <div>
+          <h1 className="text-title-1-medium font-bold text-text-primary tracking-tight">Users</h1>
+          <p className="text-body-medium text-text-secondary mt-0.5">
+            Directory of team members, roles, credentials, and access statuses
+          </p>
         </div>
       </div>
 
@@ -650,12 +644,25 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* 3. Controls & Filtering Bar (Table View, Filter, Sort, Show Statistics toggle, Search, Export) */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Left Side Controls */}
-        <div className="flex items-center flex-wrap gap-2">
-          {/* View Switch */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-button-default bg-background-primary-default text-body-2-medium text-text-primary shadow-2xs">
+      {/* 3. Controls & Filtering Bar */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        {/* Left Side: Searchbar, Table View indicator, Filter, Sort, Statistics Toggle */}
+        <div className="flex items-center flex-wrap gap-2.5">
+          {/* Pilled BoardUI SearchField on the left side */}
+          <SearchField
+            aria-label="Search users"
+            placeholder="Search users..."
+            value={search}
+            onChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            shape="pill"
+            className="w-full sm:w-72"
+          />
+
+          {/* View Indicator */}
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-button-default bg-background-primary-default text-body-2-medium text-text-primary shadow-2xs">
             <RiTableLine className="size-4 text-text-tertiary" />
             <span>Table View</span>
           </div>
@@ -677,10 +684,10 @@ export default function UsersPage() {
             <AriaPopover
               placement="bottom start"
               offset={8}
-              className="z-50 w-64 rounded-2xl border border-border-button-default bg-background-primary-default p-3.5 shadow-2xl outline-none"
+              className="z-50 w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-2xl outline-none"
             >
-              <AriaDialog className="outline-none flex flex-col gap-3">
-                <div className="flex items-center justify-between border-b border-separator-border pb-2">
+              <AriaDialog className="outline-none flex flex-col gap-3.5">
+                <div className="flex items-center justify-between border-b border-separator-border pb-2.5">
                   <span className="text-body-2-medium font-semibold text-text-primary">Filter Users</span>
                   {(roleFilter || statusFilter) && (
                     <button
@@ -697,48 +704,48 @@ export default function UsersPage() {
                   )}
                 </div>
 
-                {/* Filter by Role */}
-                <div className="space-y-1.5">
-                  <label className="text-caption-1-medium text-text-secondary">Role</label>
-                  <select
-                    value={roleFilter}
-                    onChange={(e) => {
-                      setRoleFilter(e.target.value);
-                      setPage(1);
-                    }}
-                    className="w-full h-8.5 px-2.5 rounded-lg border border-border-button-default bg-background-primary-default text-body-2-medium text-text-primary outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
-                  >
-                    <option value="">All Roles</option>
-                    <option value="SUPER_ADMIN">Super Administrator</option>
-                    <option value="ADMIN">Administrator</option>
-                    <option value="MANAGER">Manager</option>
-                    <option value="EMPLOYEE">Employee</option>
-                    {roles
-                      .filter((r) => !r.isSystem)
-                      .map((r) => (
-                        <option key={r.code} value={r.code}>
-                          {r.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
+                {/* Filter by Role using BoardUI Select */}
+                <Select
+                  label="Role"
+                  aria-label="Filter by role"
+                  size="sm"
+                  selectedKey={roleFilter || "ALL"}
+                  onSelectionChange={(key) => {
+                    setRoleFilter(key === "ALL" ? "" : String(key));
+                    setPage(1);
+                  }}
+                  className="w-full"
+                >
+                  <SelectItem id="ALL" textValue="All Roles">All Roles</SelectItem>
+                  <SelectItem id="SUPER_ADMIN" textValue="Super Administrator">Super Administrator</SelectItem>
+                  <SelectItem id="ADMIN" textValue="Administrator">Administrator</SelectItem>
+                  <SelectItem id="MANAGER" textValue="Manager">Manager</SelectItem>
+                  <SelectItem id="EMPLOYEE" textValue="Employee">Employee</SelectItem>
+                  {roles
+                    .filter((r) => !r.isSystem)
+                    .map((r) => (
+                      <SelectItem key={r.code} id={r.code} textValue={r.name}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                </Select>
 
-                {/* Filter by Status */}
-                <div className="space-y-1.5">
-                  <label className="text-caption-1-medium text-text-secondary">Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => {
-                      setStatusFilter(e.target.value);
-                      setPage(1);
-                    }}
-                    className="w-full h-8.5 px-2.5 rounded-lg border border-border-button-default bg-background-primary-default text-body-2-medium text-text-primary outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
-                  >
-                    <option value="">All Statuses</option>
-                    <option value="active">Active Only</option>
-                    <option value="inactive">Inactive Only</option>
-                  </select>
-                </div>
+                {/* Filter by Status using BoardUI Select */}
+                <Select
+                  label="Status"
+                  aria-label="Filter by status"
+                  size="sm"
+                  selectedKey={statusFilter || "ALL"}
+                  onSelectionChange={(key) => {
+                    setStatusFilter(key === "ALL" ? "" : String(key));
+                    setPage(1);
+                  }}
+                  className="w-full"
+                >
+                  <SelectItem id="ALL" textValue="All Statuses">All Statuses</SelectItem>
+                  <SelectItem id="active" textValue="Active Only">Active Only</SelectItem>
+                  <SelectItem id="inactive" textValue="Inactive Only">Inactive Only</SelectItem>
+                </Select>
               </AriaDialog>
             </AriaPopover>
           </AriaDialogTrigger>
@@ -754,7 +761,7 @@ export default function UsersPage() {
             <AriaPopover
               placement="bottom start"
               offset={8}
-              className="z-50 w-44 rounded-xl border border-border-button-default bg-background-primary-default p-1 shadow-xl outline-none"
+              className="z-50 w-48 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-xl outline-none"
             >
               <AriaDialog className="outline-none flex flex-col gap-0.5">
                 {({ close }) => (
@@ -806,7 +813,7 @@ export default function UsersPage() {
           </AriaDialogTrigger>
 
           {/* Show Statistics Switch */}
-          <div className="flex items-center gap-2 ps-2">
+          <div className="flex items-center gap-2 ps-1">
             <span className="text-body-2-medium text-text-secondary select-none">Show Statistics</span>
             <Switch
               aria-label="Show statistics row"
@@ -816,24 +823,8 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* Right Side Actions */}
-        <div className="flex items-center gap-2">
-          {/* Pilled Search Input */}
-          <div className="relative min-w-[220px] sm:min-w-[260px]">
-            <RiSearchLine className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-text-tertiary pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="w-full h-8.5 ps-9 pe-3 rounded-full border border-border-button-default bg-background-primary-default text-body-2-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 shadow-2xs transition-all"
-            />
-          </div>
-
-          {/* Export Button */}
+        {/* Right Side: Export + Add New User button */}
+        <div className="flex items-center gap-2 shrink-0">
           <Button
             variant="secondary"
             size="small"
@@ -843,19 +834,31 @@ export default function UsersPage() {
           >
             Export
           </Button>
+
+          {hasPermission('users.create') && (
+            <Button
+              variant="primary"
+              size="small"
+              onClick={handleOpenCreate}
+              leadingIcon={RiUserAddLine}
+              className="rounded-xl font-semibold"
+            >
+              Add New User
+            </Button>
+          )}
         </div>
       </div>
 
       {/* 4. TanStack Table Container */}
-      <div className="relative border border-border-button-default rounded-2xl bg-background-primary-default shadow-2xs overflow-hidden">
+      <div className="border border-border-button-default rounded-2xl bg-background-primary-default shadow-xs overflow-hidden">
         {loading ? (
           <div className="flex h-64 items-center justify-center">
             <Spinner size="md" className="text-accent-600" />
           </div>
         ) : users.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="size-12 rounded-full bg-background-secondary-default flex items-center justify-center text-text-tertiary mb-3">
-              <RiUserLine className="size-6" />
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+            <div className="size-14 rounded-2xl bg-background-secondary-default flex items-center justify-center text-text-tertiary mb-3.5 border border-separator-border">
+              <RiUserLine className="size-7" />
             </div>
             <h3 className="text-title-3-semibold text-text-primary">No users found</h3>
             <p className="text-body-2-regular text-text-secondary max-w-sm mt-1">
@@ -863,6 +866,22 @@ export default function UsersPage() {
                 ? 'Try adjusting your filters or search keywords.'
                 : 'Start by creating your first team member.'}
             </p>
+            {(search || roleFilter || statusFilter) && (
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={() => {
+                  setSearch('');
+                  setRoleFilter('');
+                  setStatusFilter('');
+                  setPage(1);
+                }}
+                className="mt-4"
+                leadingIcon={RiRestartLine}
+              >
+                Clear all filters
+              </Button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -871,23 +890,48 @@ export default function UsersPage() {
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr
                     key={headerGroup.id}
-                    className="border-b border-separator-border bg-background-secondary-default/70"
+                    className="border-b border-separator-border bg-background-secondary-default/50"
                   >
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        style={{ width: header.column.getSize() }}
-                        className="px-3.5 py-3 text-start align-middle text-caption-1-semibold uppercase tracking-wider text-text-tertiary font-semibold select-none"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </th>
-                    ))}
+                    {headerGroup.headers.map((header) => {
+                      const canSort = header.column.getCanSort();
+                      const isSorted = header.column.getIsSorted();
+                      return (
+                        <th
+                          key={header.id}
+                          style={{ width: header.column.getSize() }}
+                          className="px-4 py-3.5 text-start align-middle text-caption-1-medium uppercase tracking-wider text-text-tertiary font-semibold select-none"
+                        >
+                          {header.isPlaceholder ? null : (
+                            <div
+                              className={cx(
+                                "flex items-center gap-1.5",
+                                canSort && "cursor-pointer group/th hover:text-text-primary transition-colors"
+                              )}
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              <span>
+                                {flexRender(header.column.columnDef.header, header.getContext())}
+                              </span>
+                              {canSort && (
+                                <span className="text-text-tertiary">
+                                  {isSorted === 'asc' ? (
+                                    <RiArrowUpLine className="size-3.5 text-accent-700 dark:text-accent-400" />
+                                  ) : isSorted === 'desc' ? (
+                                    <RiArrowDownLine className="size-3.5 text-accent-700 dark:text-accent-400" />
+                                  ) : (
+                                    <RiArrowUpDownLine className="size-3.5 opacity-0 group-hover/th:opacity-100 transition-opacity" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </th>
+                      );
+                    })}
                   </tr>
                 ))}
               </thead>
-              <tbody className="divide-y divide-separator-border/60">
+              <tbody className="divide-y divide-separator-border/70">
                 {table.getRowModel().rows.map((row) => {
                   const isSelected = row.getIsSelected();
                   return (
@@ -897,14 +941,14 @@ export default function UsersPage() {
                       className={cx(
                         "transition-colors duration-150 cursor-pointer select-none",
                         isSelected
-                          ? "bg-accent-50/70 dark:bg-accent-950/30"
-                          : "hover:bg-background-secondary-default/50"
+                          ? "bg-accent-100/50 dark:bg-accent-950/25"
+                          : "hover:bg-background-secondary-default/60"
                       )}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
-                          className="px-3.5 py-3 align-middle text-body-2-medium text-text-primary"
+                          className="px-4 py-3.5 align-middle text-body-2-medium text-text-primary"
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
@@ -916,170 +960,92 @@ export default function UsersPage() {
             </table>
           </div>
         )}
-
-        {/* 5. Floating Selection Action Bar (Matches Reference Image) */}
-        {selectedCount > 0 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full border border-border-button-default bg-background-primary-default/95 backdrop-blur-md px-3.5 py-1.5 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <span className="text-body-2-medium font-semibold text-text-primary px-1">
-              {selectedCount} Selected
-            </span>
-            <span className="h-4 w-px bg-separator-border" />
-            <Button
-              variant="secondary"
-              size="xs"
-              onClick={handleBatchToggleStatus}
-              leadingIcon={RiShieldUserLine}
-              className="rounded-full"
-            >
-              Toggle Status
-            </Button>
-            {isSuperAdmin && (
-              <Button
-                variant="secondary"
-                size="xs"
-                onClick={() => setBatchRoleModalOpen(true)}
-                leadingIcon={RiEditLine}
-                className="rounded-full"
-              >
-                Change Role
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={handleExportSelected}
-              leadingIcon={RiDownloadLine}
-              className="rounded-full"
-            >
-              Export
-            </Button>
-            <span className="h-4 w-px bg-separator-border" />
-            <button
-              type="button"
-              onClick={() => setRowSelection({})}
-              className="size-6 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
-              title="Clear selection"
-            >
-              <RiCloseLine className="size-4" />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* 6. Pagination Footer (Matching Reference Layout) */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1 py-1">
-        {/* Left: Per Page Selector */}
-        <div className="flex items-center gap-2 text-body-2-medium text-text-secondary">
-          <span>Showing per page</span>
-          <select
-            value={limit}
-            onChange={(e) => {
-              setLimit(Number(e.target.value));
+      {/* 5. Floating Selection Action Bar (Floating & pinned at the bottom of the screen) */}
+      {selectedCount > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-border-button-default bg-background-primary-default/95 backdrop-blur-md px-4 py-2 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-caption-1-semibold bg-accent-500 text-neutral-950 font-bold">
+            {selectedCount} Selected
+          </span>
+          <span className="h-4 w-px bg-separator-border" />
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={handleBatchToggleStatus}
+            leadingIcon={RiShieldUserLine}
+            className="rounded-full font-medium"
+          >
+            Toggle Status
+          </Button>
+          {isSuperAdmin && (
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => setBatchRoleModalOpen(true)}
+              leadingIcon={RiEditLine}
+              className="rounded-full font-medium"
+            >
+              Change Role
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="small"
+            onClick={handleExportSelected}
+            leadingIcon={RiDownloadLine}
+            className="rounded-full font-medium"
+          >
+            Export
+          </Button>
+          <span className="h-4 w-px bg-separator-border" />
+          <button
+            type="button"
+            onClick={() => setRowSelection({})}
+            className="size-7 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+            title="Clear selection"
+            aria-label="Clear selection"
+          >
+            <RiCloseLine className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {/* 6. Pagination Footer (BoardUI Components) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2 px-1">
+        {/* Left: Per Page Selector & Summary */}
+        <div className="flex items-center gap-3 text-body-2-medium text-text-secondary">
+          <span>Rows per page</span>
+          <Select
+            aria-label="Rows per page"
+            size="sm"
+            selectedKey={String(limit)}
+            onSelectionChange={(key) => {
+              setLimit(Number(key));
               setPage(1);
             }}
-            className="h-8 px-2 rounded-lg border border-border-button-default bg-background-primary-default text-body-2-medium text-text-primary outline-none focus:border-accent-500 shadow-2xs cursor-pointer"
+            className="w-20"
           >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+            <SelectItem id="10" textValue="10">10</SelectItem>
+            <SelectItem id="20" textValue="20">20</SelectItem>
+            <SelectItem id="50" textValue="50">50</SelectItem>
+            <SelectItem id="100" textValue="100">100</SelectItem>
+          </Select>
+          <span className="text-text-tertiary">
+            {total > 0
+              ? `${(page - 1) * limit + 1}–${Math.min(page * limit, total)} of ${total} users`
+              : '0 users'}
+          </span>
         </div>
 
-        {/* Center: Pagination Controls */}
-        <div className="flex items-center gap-1">
-          {/* First Page */}
-          <button
-            type="button"
-            onClick={() => setPage(1)}
-            disabled={page === 1}
-            className="size-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
-            title="First page"
-          >
-            <RiArrowLeftDoubleLine className="size-4" />
-          </button>
-
-          {/* Previous Page */}
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="size-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
-            title="Previous page"
-          >
-            <RiArrowLeftSLine className="size-4" />
-          </button>
-
-          {/* Page Number Chips */}
-          <div className="flex items-center gap-1 mx-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, idx) => {
-              let pageNum = page;
-              if (totalPages <= 5) {
-                pageNum = idx + 1;
-              } else if (page <= 3) {
-                pageNum = idx + 1;
-              } else if (page >= totalPages - 2) {
-                pageNum = totalPages - 4 + idx;
-              } else {
-                pageNum = page - 2 + idx;
-              }
-
-              const isActivePage = page === pageNum;
-              return (
-                <button
-                  key={pageNum}
-                  type="button"
-                  onClick={() => setPage(pageNum)}
-                  className={cx(
-                    "size-8 rounded-lg text-body-2-medium transition-colors font-medium flex items-center justify-center cursor-pointer",
-                    isActivePage
-                      ? "bg-accent-600 text-white shadow-2xs font-bold"
-                      : "text-text-secondary hover:bg-background-secondary-default hover:text-text-primary"
-                  )}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Next Page */}
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages || totalPages === 0}
-            className="size-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
-            title="Next page"
-          >
-            <RiArrowRightSLine className="size-4" />
-          </button>
-
-          {/* Last Page */}
-          <button
-            type="button"
-            onClick={() => setPage(totalPages)}
-            disabled={page === totalPages || totalPages === 0}
-            className="size-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
-            title="Last page"
-          >
-            <RiArrowRightDoubleLine className="size-4" />
-          </button>
-        </div>
-
-        {/* Right: Go to page */}
-        <form onSubmit={handleJumpPage} className="flex items-center gap-2 text-body-2-medium text-text-secondary">
-          <span>Go to page</span>
-          <input
-            type="text"
-            placeholder={String(page)}
-            value={jumpPage}
-            onChange={(e) => setJumpPage(e.target.value)}
-            className="w-12 h-8 px-2 text-center rounded-lg border border-border-button-default bg-background-primary-default text-body-2-medium text-text-primary outline-none focus:border-accent-500 shadow-2xs"
+        {/* Right: BoardUI Pagination Component */}
+        <div className="flex items-center">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onChange={(p) => setPage(p)}
           />
-          <Button type="submit" variant="secondary" size="xs" className="h-8 rounded-lg">
-            Go &gt;
-          </Button>
-        </form>
+        </div>
       </div>
 
       {/* Modals & Dialogs */}
@@ -1122,25 +1088,24 @@ export default function UsersPage() {
                   isRequired
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-body-2-medium text-text-secondary">Assigned Security Role</label>
-                <select
-                  value={formRole}
-                  onChange={(e) => setFormRole(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg border border-border-button-default bg-background-primary-default text-body-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500"
-                >
-                  <option value={Role.EMPLOYEE}>Employee</option>
-                  <option value={Role.MANAGER}>Manager</option>
-                  {isSuperAdmin && <option value={Role.ADMIN}>Administrator</option>}
-                  {roles
-                    .filter((r) => !r.isSystem)
-                    .map((r) => (
-                      <option key={r.code} value={r.code}>
-                        {r.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
+              <Select
+                label="Assigned Security Role"
+                aria-label="Assigned Security Role"
+                selectedKey={formRole}
+                onSelectionChange={(key) => setFormRole(String(key))}
+                className="w-full"
+              >
+                <SelectItem id={Role.EMPLOYEE} textValue="Employee">Employee</SelectItem>
+                <SelectItem id={Role.MANAGER} textValue="Manager">Manager</SelectItem>
+                {isSuperAdmin && <SelectItem id={Role.ADMIN} textValue="Administrator">Administrator</SelectItem>}
+                {roles
+                  .filter((r) => !r.isSystem)
+                  .map((r) => (
+                    <SelectItem key={r.code} id={r.code} textValue={r.name}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+              </Select>
             </ModalBody>
             <ModalFooter>
               <Button variant="secondary" onClick={close} type="button">
@@ -1189,26 +1154,25 @@ export default function UsersPage() {
               </div>
 
               {isSuperAdmin && (
-                <div className="space-y-1.5">
-                  <label className="text-body-2-medium text-text-secondary">Role Assignment</label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => setFormRole(e.target.value)}
-                    className="w-full h-9 px-3 rounded-lg border border-border-button-default bg-background-primary-default text-body-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500"
-                  >
-                    <option value={Role.SUPER_ADMIN}>Super Administrator</option>
-                    <option value={Role.ADMIN}>Administrator</option>
-                    <option value={Role.MANAGER}>Manager</option>
-                    <option value={Role.EMPLOYEE}>Employee</option>
-                    {roles
-                      .filter((r) => !r.isSystem)
-                      .map((r) => (
-                        <option key={r.code} value={r.code}>
-                          {r.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
+                <Select
+                  label="Role Assignment"
+                  aria-label="Role Assignment"
+                  selectedKey={formRole}
+                  onSelectionChange={(key) => setFormRole(String(key))}
+                  className="w-full"
+                >
+                  <SelectItem id={Role.SUPER_ADMIN} textValue="Super Administrator">Super Administrator</SelectItem>
+                  <SelectItem id={Role.ADMIN} textValue="Administrator">Administrator</SelectItem>
+                  <SelectItem id={Role.MANAGER} textValue="Manager">Manager</SelectItem>
+                  <SelectItem id={Role.EMPLOYEE} textValue="Employee">Employee</SelectItem>
+                  {roles
+                    .filter((r) => !r.isSystem)
+                    .map((r) => (
+                      <SelectItem key={r.code} id={r.code} textValue={r.name}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                </Select>
               )}
             </ModalBody>
             <ModalFooter>
@@ -1232,25 +1196,24 @@ export default function UsersPage() {
               description="Batch update the security role and access permissions for selected users."
             />
             <ModalBody className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-body-2-medium text-text-secondary">Target Role</label>
-                <select
-                  value={batchTargetRole}
-                  onChange={(e) => setBatchTargetRole(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg border border-border-button-default bg-background-primary-default text-body-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-500"
-                >
-                  <option value={Role.EMPLOYEE}>Employee</option>
-                  <option value={Role.MANAGER}>Manager</option>
-                  <option value={Role.ADMIN}>Administrator</option>
-                  {roles
-                    .filter((r) => !r.isSystem)
-                    .map((r) => (
-                      <option key={r.code} value={r.code}>
-                        {r.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
+              <Select
+                label="Target Role"
+                aria-label="Target Role"
+                selectedKey={batchTargetRole}
+                onSelectionChange={(key) => setBatchTargetRole(String(key))}
+                className="w-full"
+              >
+                <SelectItem id={Role.EMPLOYEE} textValue="Employee">Employee</SelectItem>
+                <SelectItem id={Role.MANAGER} textValue="Manager">Manager</SelectItem>
+                <SelectItem id={Role.ADMIN} textValue="Administrator">Administrator</SelectItem>
+                {roles
+                  .filter((r) => !r.isSystem)
+                  .map((r) => (
+                    <SelectItem key={r.code} id={r.code} textValue={r.name}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+              </Select>
             </ModalBody>
             <ModalFooter>
               <Button variant="secondary" onClick={close} type="button">
