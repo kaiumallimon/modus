@@ -12,7 +12,7 @@ interface AppShellProps {
 
 export function AppShell({ children, title, breadcrumbs }: AppShellProps) {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background-tertiary-default text-text-primary antialiased">
+    <div className="flex h-screen w-screen overflow-hidden modus-auth-bg text-text-primary antialiased">
       <AppSidebar />
       <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
         <AppHeader title={title} breadcrumbs={breadcrumbs} />
