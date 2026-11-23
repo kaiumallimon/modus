@@ -361,39 +361,30 @@ export function AppSidebar() {
 
         {/* PINNED FOOTER: Avatar, Name, Three-Dot Context Trigger, & Notifications */}
         <div className="shrink-0 bg-background-primary-default p-3">
-          <div className={cx('flex items-center justify-between gap-2', collapsed && 'flex-col justify-center')}>
-            {/* Left: Avatar & Name */}
-            <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
-              <Avatar
-                initials={user?.firstName ? user.firstName[0].toUpperCase() : 'M'}
-                size="md"
-                color="lime"
-                className="shrink-0 font-bold"
-              />
-              {!collapsed && (
-                <div className="flex flex-col min-w-0 truncate">
-                  <span className="text-body-2-medium font-semibold text-text-primary truncate">
-                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
-                  </span>
-                  <span className="text-[11px] text-text-tertiary uppercase truncate">
-                    {user?.role?.replace('_', ' ') || 'Super Admin'}
-                  </span>
-                </div>
-              )}
-            </div>
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-2.5">
+              {/* Notification Bell Button (Top) */}
+              <button
+                type="button"
+                onClick={() => toast('No unread notifications', { status: 'information' })}
+                className="relative size-8 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
+                title="Notifications"
+                aria-label="Notifications"
+              >
+                <RiNotification3Line className="size-4" />
+                <span className="absolute top-1.5 end-1.5 size-2 rounded-full bg-blue-500 ring-2 ring-background-primary-default" />
+              </button>
 
-            {/* Right: Three Dots Trigger & Notification Bell */}
-            <div className="flex items-center gap-1 shrink-0">
-              {/* Three-Dot Popover Context Menu Trigger */}
+              {/* Three-Dot Popover Context Menu Trigger (Middle) */}
               <AriaDialogTrigger>
                 <AriaButton
-                  className="size-7.5 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
+                  className="size-8 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
                   aria-label="User preferences and options"
                 >
                   <RiMoreFill className="size-4" />
                 </AriaButton>
                 <AriaPopover
-                  placement={collapsed ? 'right bottom' : 'top end'}
+                  placement="right bottom"
                   offset={8}
                   className="z-110 w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-2xl transition duration-150 ease-out outline-none select-none"
                 >
@@ -505,20 +496,172 @@ export function AppSidebar() {
                 </AriaPopover>
               </AriaDialogTrigger>
 
-              {/* Notification Bell Button with Blue Dot */}
-              <button
-                type="button"
-                onClick={() => toast('No unread notifications', { status: 'information' })}
-                className="relative size-7.5 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
-                title="Notifications"
-                aria-label="Notifications"
-              >
-                <RiNotification3Line className="size-4" />
-                {/* Blue Unread Indicator Dot */}
-                <span className="absolute top-1.5 end-1.5 size-2 rounded-full bg-blue-500 ring-2 ring-background-primary-default" />
-              </button>
+              {/* Avatar (Bottom) */}
+              <Avatar
+                initials={user?.firstName ? user.firstName[0].toUpperCase() : 'M'}
+                size="md"
+                color="lime"
+                className="shrink-0 font-bold"
+              />
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center justify-between gap-2">
+              {/* Left: Avatar & Name */}
+              <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                <Avatar
+                  initials={user?.firstName ? user.firstName[0].toUpperCase() : 'M'}
+                  size="md"
+                  color="lime"
+                  className="shrink-0 font-bold"
+                />
+                <div className="flex flex-col min-w-0 truncate">
+                  <span className="text-body-2-medium font-semibold text-text-primary truncate">
+                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
+                  </span>
+                  <span className="text-[11px] text-text-tertiary uppercase truncate">
+                    {user?.role?.replace('_', ' ') || 'Super Admin'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: Three Dots Trigger & Notification Bell */}
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Three-Dot Popover Context Menu Trigger */}
+                <AriaDialogTrigger>
+                  <AriaButton
+                    className="size-7.5 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
+                    aria-label="User preferences and options"
+                  >
+                    <RiMoreFill className="size-4" />
+                  </AriaButton>
+                  <AriaPopover
+                    placement="top end"
+                    offset={8}
+                    className="z-110 w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-2xl transition duration-150 ease-out outline-none select-none"
+                  >
+                    <AriaDialog className="outline-none flex flex-col gap-0.5">
+                      {({ close }) => (
+                        <>
+                          {/* Header: User name, email and Settings gear */}
+                          <div className="flex items-center justify-between px-3 py-2.5">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-body-2-medium font-semibold text-text-primary truncate">
+                                {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
+                              </span>
+                              <span className="text-caption-1-regular text-text-tertiary truncate">
+                                {user?.email || 'admin@modus.local'}
+                              </span>
+                            </div>
+                            <Link
+                              href="/settings"
+                              onClick={close}
+                              className="size-7.5 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0"
+                              title="Settings"
+                            >
+                              <RiSettings3Line className="size-4.5" />
+                            </Link>
+                          </div>
+
+                          <div className="my-1 border-t border-separator-border" />
+
+                          {/* Feedback Row */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              close();
+                              toast('Feedback dialog opened', { status: 'information' });
+                            }}
+                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
+                          >
+                            <span>Feedback</span>
+                            <RiFeedbackLine className="size-4.5 text-text-tertiary" />
+                          </button>
+
+                          {/* Theme Row with inline 3-option compact pill toggle */}
+                          <div className="flex items-center justify-between px-3 py-1.5 rounded-xl text-body-2-medium text-text-secondary select-none">
+                            <span>Theme</span>
+                            <ThemeToggle label={false} />
+                          </div>
+
+                          {/* Home Page Link */}
+                          <Link
+                            href="/dashboard"
+                            onClick={close}
+                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start"
+                          >
+                            <span>Home Page</span>
+                            <RiHomeLine className="size-4.5 text-text-tertiary" />
+                          </Link>
+
+                          {/* Help */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              close();
+                              toast('Help Center documentation opened', { status: 'information' });
+                            }}
+                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
+                          >
+                            <span>Help</span>
+                            <RiLifebuoyLine className="size-4.5 text-text-tertiary" />
+                          </button>
+
+                          {/* Docs */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              close();
+                              toast('Platform documentation opened', { status: 'information' });
+                            }}
+                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
+                          >
+                            <span>Docs</span>
+                            <RiBookOpenLine className="size-4.5 text-text-tertiary" />
+                          </button>
+
+                          {/* Log Out */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              close();
+                              setLogoutDialogOpen(true);
+                            }}
+                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-error-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer group"
+                          >
+                            <span>Log Out</span>
+                            <RiLogoutBoxRLine className="size-4.5 text-text-tertiary group-hover:text-text-error-primary" />
+                          </button>
+
+                          <div className="my-1 border-t border-separator-border" />
+
+                          {/* All Systems Normal Status Row */}
+                          <div className="flex items-center justify-between px-3 py-2 text-caption-1-medium">
+                            <span className="text-accent-700 dark:text-accent-300 font-medium">
+                              All systems normal.
+                            </span>
+                            <span className="size-2 rounded-full bg-accent-500 animate-pulse" />
+                          </div>
+                        </>
+                      )}
+                    </AriaDialog>
+                  </AriaPopover>
+                </AriaDialogTrigger>
+
+                {/* Notification Bell Button with Blue Dot */}
+                <button
+                  type="button"
+                  onClick={() => toast('No unread notifications', { status: 'information' })}
+                  className="relative size-7.5 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
+                  title="Notifications"
+                  aria-label="Notifications"
+                >
+                  <RiNotification3Line className="size-4" />
+                  {/* Blue Unread Indicator Dot */}
+                  <span className="absolute top-1.5 end-1.5 size-2 rounded-full bg-blue-500 ring-2 ring-background-primary-default" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
 
