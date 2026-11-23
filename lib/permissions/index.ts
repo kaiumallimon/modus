@@ -223,3 +223,36 @@ export function hasAllPermissions(
   if (!permissions || permissions.length === 0) return true;
   return permissions.every((perm) => userPermissions.includes(perm));
 }
+
+/**
+ * Checks if a given target user corresponds to the current logged-in user.
+ */
+export function isSameUser(
+  currentUser: User | null | undefined,
+  targetUser: User | null | undefined,
+): boolean {
+  if (!currentUser || !targetUser) return false;
+  if (currentUser._id && (currentUser._id === targetUser._id || currentUser._id === targetUser.id)) return true;
+  if (currentUser.id && (currentUser.id === targetUser._id || currentUser.id === targetUser.id)) return true;
+  if (currentUser.humanId && targetUser.humanId && currentUser.humanId === targetUser.humanId) return true;
+  if (currentUser.email && targetUser.email && currentUser.email.toLowerCase() === targetUser.email.toLowerCase()) return true;
+  return false;
+}
+
+/**
+ * Checks whether the current user is permitted to change the role of a target user.
+ * A logged-in Super Administrator (or any user) cannot change their own role.
+ */
+export function canChangeUserRole(
+  currentUser: User | null | undefined,
+  targetUser: User | null | undefined,
+): boolean {
+  if (!currentUser || !targetUser) return false;
+  if (!currentUser.isActive) return false;
+  const isSuperAdmin =
+    currentUser.role === Role.SUPER_ADMIN || currentUser.role === 'SUPER_ADMIN';
+  if (!isSuperAdmin) return false;
+  // Current logged in super user cannot change their own role
+  if (isSameUser(currentUser, targetUser)) return false;
+  return true;
+}

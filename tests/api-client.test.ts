@@ -46,6 +46,7 @@ describe('API Client & Error Classification Tests', () => {
   test('Endpoint helpers produce compliant REST paths', () => {
     assert.equal(API_ENDPOINTS.USER_BY_ID('123'), '/users/123');
     assert.equal(API_ENDPOINTS.USER_STATUS('123'), '/users/123/status');
+    assert.equal(API_ENDPOINTS.USER_ROLE('123'), '/users/123/role');
     assert.equal(API_ENDPOINTS.ROLE_BY_ID('abc'), '/roles/abc');
     assert.equal(API_ENDPOINTS.MODULE_BY_ID('users'), '/modules/users');
     assert.equal(API_ENDPOINTS.MODULE_ACTIVATION('users'), '/modules/users/activation');

@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
   USERS: '/users',
   USER_BY_ID: (id: string) => `/users/${id}`,
   USER_STATUS: (id: string) => `/users/${id}/status`,
+  USER_ROLE: (id: string) => `/users/${id}/role`,
 
   // Roles & Permissions
   ROLES: '/roles',

@@ -1,6 +1,12 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { hasPermission, hasAnyPermission, hasAllPermissions } from '../lib/permissions';
+import {
+  hasPermission,
+  hasAnyPermission,
+  hasAllPermissions,
+  isSameUser,
+  canChangeUserRole,
+} from '../lib/permissions';
 import { type User, Role } from '../lib/api/types';
 
 describe('Permissions Utility Tests', () => {
@@ -78,5 +84,35 @@ describe('Permissions Utility Tests', () => {
     assert.equal(hasPermission(null, managerPermissions, 'users.read'), false);
     assert.equal(hasAnyPermission(null, managerPermissions, ['users.read']), false);
     assert.equal(hasAllPermissions(null, managerPermissions, ['users.read']), false);
+  });
+
+  test('isSameUser correctly detects self identity across fields', () => {
+    assert.equal(isSameUser(superAdminUser, superAdminUser), true);
+    assert.equal(
+      isSameUser(superAdminUser, { ...superAdminUser, email: 'ADMIN@MODUS.LOCAL' }),
+      true
+    );
+    assert.equal(
+      isSameUser({ ...superAdminUser, _id: 'mongo-id-1' }, { ...superAdminUser, id: 'mongo-id-1' }),
+      true
+    );
+    assert.equal(isSameUser(superAdminUser, managerUser), false);
+    assert.equal(isSameUser(null, superAdminUser), false);
+    assert.equal(isSameUser(superAdminUser, null), false);
+  });
+
+  test('Super Admin cannot change own role, but can change other users roles', () => {
+    // Current logged in super user cannot change his role
+    assert.equal(canChangeUserRole(superAdminUser, superAdminUser), false);
+
+    // Super user CAN change role of other users
+    assert.equal(canChangeUserRole(superAdminUser, managerUser), true);
+
+    // Non-super-admin cannot change anyone's role
+    assert.equal(canChangeUserRole(managerUser, superAdminUser), false);
+    assert.equal(canChangeUserRole(managerUser, managerUser), false);
+
+    // Inactive super admin cannot change role
+    assert.equal(canChangeUserRole({ ...superAdminUser, isActive: false }, managerUser), false);
   });
 });

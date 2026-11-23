@@ -50,7 +50,7 @@ import { toast } from '@/components/base/toast/toast';
 import { Select, SelectItem } from '@/components/base/select/select';
 import { Pagination } from '@/components/base/pagination/pagination';
 import { SearchField } from '@/components/base/search-field/search-field';
-import { getRoleDisplayName } from '@/lib/permissions';
+import { getRoleDisplayName, isSameUser } from '@/lib/permissions';
 import { cx } from '@/utils/cx';
 
 export default function UsersPage() {
@@ -197,11 +197,13 @@ export default function UsersPage() {
     setFormError('');
 
     try {
+      const isSelf = isSameUser(currentUser, selectedUser);
       const payload: any = {
         firstName: formFirstName.trim(),
         lastName: formLastName.trim(),
       };
-      if (isSuperAdmin && formRole) {
+      // Prevent current super user from changing their own role
+      if (isSuperAdmin && formRole && !isSelf) {
         payload.role = formRole;
       }
 
@@ -274,11 +276,20 @@ export default function UsersPage() {
     e.preventDefault();
     if (selectedCount === 0 || !isSuperAdmin) return;
 
+    // Filter out current user from batch role updates (super user cannot change own role)
+    const usersToUpdate = selectedUserIds
+      .map((id) => users.find((item) => (item._id || item.id || item.humanId) === id))
+      .filter((u): u is User => !!u && !isSameUser(currentUser, u));
+
+    if (usersToUpdate.length === 0) {
+      toast.error('Current logged in super user cannot change their own role');
+      setBatchRoleModalOpen(false);
+      return;
+    }
+
     try {
       await Promise.all(
-        selectedUserIds.map((id) => {
-          const u = users.find((item) => (item._id || item.id || item.humanId) === id);
-          if (!u) return Promise.resolve();
+        usersToUpdate.map((u) => {
           const targetId = u._id || u.id;
           return apiClient(API_ENDPOINTS.USER_BY_ID(targetId!), {
             method: 'PATCH',
@@ -286,7 +297,15 @@ export default function UsersPage() {
           });
         })
       );
-      toast.success(`Role updated for ${selectedCount} user${selectedCount === 1 ? '' : 's'}`);
+      const updatedCount = usersToUpdate.length;
+      const skippedSelf = selectedUserIds.length > updatedCount;
+      if (skippedSelf) {
+        toast.success(
+          `Role updated for ${updatedCount} user${updatedCount === 1 ? '' : 's'} (your own role was preserved)`
+        );
+      } else {
+        toast.success(`Role updated for ${updatedCount} user${updatedCount === 1 ? '' : 's'}`);
+      }
       setBatchRoleModalOpen(false);
       setRowSelection({});
       loadUsers();
@@ -479,7 +498,7 @@ export default function UsersPage() {
         header: '',
         cell: ({ row }) => {
           const u = row.original;
-          const isSelf = currentUser?._id === u._id || currentUser?.id === u.id;
+          const isSelf = isSameUser(currentUser, u);
           return (
             <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
               <AriaDialogTrigger>
@@ -1154,25 +1173,44 @@ export default function UsersPage() {
               </div>
 
               {isSuperAdmin && (
-                <Select
-                  label="Role Assignment"
-                  aria-label="Role Assignment"
-                  selectedKey={formRole}
-                  onSelectionChange={(key) => setFormRole(String(key))}
-                  className="w-full"
-                >
-                  <SelectItem id={Role.SUPER_ADMIN} textValue="Super Administrator">Super Administrator</SelectItem>
-                  <SelectItem id={Role.ADMIN} textValue="Administrator">Administrator</SelectItem>
-                  <SelectItem id={Role.MANAGER} textValue="Manager">Manager</SelectItem>
-                  <SelectItem id={Role.EMPLOYEE} textValue="Employee">Employee</SelectItem>
-                  {roles
-                    .filter((r) => !r.isSystem)
-                    .map((r) => (
-                      <SelectItem key={r.code} id={r.code} textValue={r.name}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                </Select>
+                isSameUser(currentUser, selectedUser) ? (
+                  <div className="space-y-1.5">
+                    <label className="text-body-2-medium text-text-primary">Role Assignment</label>
+                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border-button-default bg-background-secondary-default">
+                      <div className="flex items-center gap-2">
+                        <Chip color={getRoleChipColor(String(selectedUser?.role))} variant="caption" className="font-mono">
+                          {getRoleDisplayName(String(selectedUser?.role))}
+                        </Chip>
+                        <span className="text-caption-1-regular text-text-tertiary">
+                          (Current Account)
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-caption-1-regular text-text-tertiary">
+                      Current logged in super user cannot change their own role.
+                    </p>
+                  </div>
+                ) : (
+                  <Select
+                    label="Role Assignment"
+                    aria-label="Role Assignment"
+                    selectedKey={formRole}
+                    onSelectionChange={(key) => setFormRole(String(key))}
+                    className="w-full"
+                  >
+                    <SelectItem id={Role.SUPER_ADMIN} textValue="Super Administrator">Super Administrator</SelectItem>
+                    <SelectItem id={Role.ADMIN} textValue="Administrator">Administrator</SelectItem>
+                    <SelectItem id={Role.MANAGER} textValue="Manager">Manager</SelectItem>
+                    <SelectItem id={Role.EMPLOYEE} textValue="Employee">Employee</SelectItem>
+                    {roles
+                      .filter((r) => !r.isSystem)
+                      .map((r) => (
+                        <SelectItem key={r.code} id={r.code} textValue={r.name}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                  </Select>
+                )
               )}
             </ModalBody>
             <ModalFooter>
@@ -1189,42 +1227,68 @@ export default function UsersPage() {
 
       {/* Batch Role Change Modal */}
       <Modal isOpen={batchRoleModalOpen} onOpenChange={setBatchRoleModalOpen}>
-        {({ close }) => (
-          <form onSubmit={handleBatchRoleSubmit}>
-            <ModalHeader
-              title={`Change Role for ${selectedCount} User${selectedCount === 1 ? '' : 's'}`}
-              description="Batch update the security role and access permissions for selected users."
-            />
-            <ModalBody className="space-y-4">
-              <Select
-                label="Target Role"
-                aria-label="Target Role"
-                selectedKey={batchTargetRole}
-                onSelectionChange={(key) => setBatchTargetRole(String(key))}
-                className="w-full"
-              >
-                <SelectItem id={Role.EMPLOYEE} textValue="Employee">Employee</SelectItem>
-                <SelectItem id={Role.MANAGER} textValue="Manager">Manager</SelectItem>
-                <SelectItem id={Role.ADMIN} textValue="Administrator">Administrator</SelectItem>
-                {roles
-                  .filter((r) => !r.isSystem)
-                  .map((r) => (
-                    <SelectItem key={r.code} id={r.code} textValue={r.name}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
-              </Select>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={close} type="button">
-                Cancel
-              </Button>
-              <Button variant="primary" type="submit">
-                Apply Role Change
-              </Button>
-            </ModalFooter>
-          </form>
-        )}
+        {({ close }) => {
+          const hasSelfInSelection = selectedUserIds.some((id) => {
+            const u = users.find((item) => (item._id || item.id || item.humanId) === id);
+            return isSameUser(currentUser, u);
+          });
+          const nonSelfSelectedCount = selectedUserIds.filter((id) => {
+            const u = users.find((item) => (item._id || item.id || item.humanId) === id);
+            return !isSameUser(currentUser, u);
+          }).length;
+
+          return (
+            <form onSubmit={handleBatchRoleSubmit}>
+              <ModalHeader
+                title={`Change Role for ${selectedCount} User${selectedCount === 1 ? '' : 's'}`}
+                description="Batch update the security role and access permissions for selected users."
+              />
+              <ModalBody className="space-y-4">
+                {hasSelfInSelection && (
+                  <div className="p-3 rounded-xl border border-separator-border bg-background-secondary-default text-caption-1-regular text-text-tertiary">
+                    Your own account is included in this selection and will be excluded from role changes. Current logged in super user cannot change their own role.
+                  </div>
+                )}
+                {nonSelfSelectedCount === 0 ? (
+                  <p className="text-body-2-regular text-text-error-primary">
+                    Only your own account is selected. Current logged in super user cannot change their own role.
+                  </p>
+                ) : (
+                  <Select
+                    label="Target Role"
+                    aria-label="Target Role"
+                    selectedKey={batchTargetRole}
+                    onSelectionChange={(key) => setBatchTargetRole(String(key))}
+                    className="w-full"
+                  >
+                    <SelectItem id={Role.EMPLOYEE} textValue="Employee">Employee</SelectItem>
+                    <SelectItem id={Role.MANAGER} textValue="Manager">Manager</SelectItem>
+                    <SelectItem id={Role.ADMIN} textValue="Administrator">Administrator</SelectItem>
+                    {roles
+                      .filter((r) => !r.isSystem)
+                      .map((r) => (
+                        <SelectItem key={r.code} id={r.code} textValue={r.name}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                  </Select>
+                )}
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="secondary" onClick={close} type="button">
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={nonSelfSelectedCount === 0}
+                >
+                  Apply Role Change
+                </Button>
+              </ModalFooter>
+            </form>
+          );
+        }}
       </Modal>
 
       {/* Toggle Status Confirmation Dialog */}
