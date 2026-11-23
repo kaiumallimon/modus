@@ -340,7 +340,7 @@ export function AppSidebar() {
         {/* PINNED FOOTER (NOT SCROLLABLE) */}
         <div className="shrink-0 border-t border-border-button-default bg-background-primary-default p-3 space-y-2.5">
           {/* Theme Toggle moved into Sidebar Footer */}
-          <div className="flex items-center justify-center">
+          <div className="w-full flex items-center justify-center">
             <ThemeToggle collapsed={collapsed} />
           </div>
 
