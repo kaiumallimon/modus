@@ -519,6 +519,7 @@ export function AppSidebar() {
 
               {/* Avatar (Bottom) */}
               <Avatar
+                src={user?.avatarUrl || user?.avatar || undefined}
                 initials={user?.firstName ? user.firstName[0].toUpperCase() : 'M'}
                 size="md"
                 color="lime"
@@ -530,6 +531,7 @@ export function AppSidebar() {
               {/* Left: Avatar & Name */}
               <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
                 <Avatar
+                  src={user?.avatarUrl || user?.avatar || undefined}
                   initials={user?.firstName ? user.firstName[0].toUpperCase() : 'M'}
                   size="md"
                   color="lime"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   RiMailLine,
   RiShieldUserLine,
@@ -8,10 +8,13 @@ import {
   RiLockPasswordLine,
   RiKeyLine,
   RiCheckLine,
+  RiUpload2Line,
+  RiDeleteBinLine,
 } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Chip } from "@/components/base/badges/chip";
+import { Avatar } from "@/components/base/avatar/avatar";
 import { toast } from "@/components/base/toast/toast";
 import { useAuth } from "@/providers/auth-provider";
 import { apiClient } from "@/lib/api/client";
@@ -37,6 +40,64 @@ export function SettingsProfile({ onSaved }: { onSaved?: () => void } = {}) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+
+  // Avatar upload
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedMimes.includes(file.type)) {
+      toast.error('Invalid image type. Please select a JPG, PNG, WEBP, or GIF.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Avatar file size cannot exceed 5MB');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      await apiClient(API_ENDPOINTS.AUTH_AVATAR, {
+        method: 'POST',
+        body: formData,
+      });
+
+      await refreshProfile();
+      toast.success('Avatar uploaded successfully');
+      onSaved?.();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload avatar');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    setUploadingAvatar(true);
+    try {
+      await apiClient(API_ENDPOINTS.AUTH_AVATAR, {
+        method: 'DELETE',
+      });
+      await refreshProfile();
+      toast.success('Avatar removed successfully');
+      onSaved?.();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleUpdateNames = async () => {
     if (!user) return;
@@ -114,6 +175,56 @@ export function SettingsProfile({ onSaved }: { onSaved?: () => void } = {}) {
       <div className="flex w-full flex-col gap-2">
         <SettingsSectionLabel>Personal Identity</SettingsSectionLabel>
         <SettingsCard>
+          <SettingsRow
+            label="Profile photo"
+            description="JPG, PNG, WEBP, or GIF up to 5MB. Hosted securely on Cloudflare CDN."
+          >
+            <div className="flex items-center gap-4">
+              <Avatar
+                src={user?.avatarUrl || user?.avatar || undefined}
+                initials={user?.firstName ? user.firstName[0].toUpperCase() : "U"}
+                size="xl"
+                color="lime"
+                className="shrink-0"
+              />
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    leadingIcon={RiUpload2Line}
+                    disabled={uploadingAvatar}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploadingAvatar ? "Uploading..." : "Upload Photo"}
+                  </Button>
+                  {(user?.avatarUrl || user?.avatar) && (
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      leadingIcon={RiDeleteBinLine}
+                      disabled={uploadingAvatar}
+                      onClick={handleAvatarRemove}
+                      className="text-text-error-primary hover:text-text-error-hover"
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <span className="text-[11px] text-text-tertiary">
+                  Recommended size 256x256px
+                </span>
+              </div>
+            </div>
+          </SettingsRow>
+
           <SettingsRow label="First name" description="Your given name">
             <div className="flex items-center gap-2">
               <Input

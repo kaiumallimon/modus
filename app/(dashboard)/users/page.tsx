@@ -18,6 +18,8 @@ import {
   RiToggleLine,
   RiCalendarLine,
   RiRestartLine,
+  RiUpload2Line,
+  RiDeleteBinLine,
 } from '@remixicon/react';
 import {
   useReactTable,
@@ -54,7 +56,7 @@ import { getRoleDisplayName, isSameUser } from '@/lib/permissions';
 import { cx } from '@/utils/cx';
 
 export default function UsersPage() {
-  const { user: currentUser, hasPermission, isSuperAdmin } = useAuth();
+  const { user: currentUser, hasPermission, isSuperAdmin, refreshProfile } = useAuth();
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -89,6 +91,63 @@ export default function UsersPage() {
   const [formRole, setFormRole] = useState<string>('EMPLOYEE');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (file: File) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedMimes.includes(file.type)) {
+      toast.error('Invalid image type. Please select a JPG, PNG, WEBP, or GIF.');
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Avatar file size cannot exceed 5MB');
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await apiClient<{ avatarUrl: string; user: User }>(API_ENDPOINTS.AUTH_AVATAR, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res?.avatarUrl) {
+        setSelectedUser((prev) => (prev ? { ...prev, avatarUrl: res.avatarUrl } : null));
+      }
+      await refreshProfile();
+      await loadUsers();
+      toast.success('Avatar uploaded successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload avatar');
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    setUploadingAvatar(true);
+    try {
+      await apiClient(API_ENDPOINTS.AUTH_AVATAR, {
+        method: 'DELETE',
+      });
+      setSelectedUser((prev) => (prev ? { ...prev, avatarUrl: null, avatar: null } : null));
+      await refreshProfile();
+      await loadUsers();
+      toast.success('Avatar removed successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   // Load available roles for filters and creation
   useEffect(() => {
@@ -215,6 +274,9 @@ export default function UsersPage() {
 
       toast.success('User details updated successfully');
       setEditModalOpen(false);
+      if (isSelf) {
+        refreshProfile();
+      }
       loadUsers();
     } catch (err: any) {
       const msg = err.message || 'Failed to update user';
@@ -402,11 +464,12 @@ export default function UsersPage() {
         accessorFn: (row) => `${row.firstName} ${row.lastName}`,
         cell: ({ row }) => {
           const u = row.original;
-          const initials = u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : 'U';
+          const initials = u.firstName ? u.firstName[0].toUpperCase() : 'U';
           const isCurrent = currentUser?._id === u._id || currentUser?.id === u.id;
           return (
             <div className="flex items-center gap-3 min-w-0">
               <Avatar
+                src={u.avatarUrl || u.avatar || undefined}
                 initials={initials}
                 size="md"
                 color={u.role === 'SUPER_ADMIN' ? 'lime' : 'blue'}
@@ -1152,6 +1215,65 @@ export default function UsersPage() {
                   {formError}
                 </div>
               )}
+
+              {/* Avatar Section */}
+              <div className="flex items-center gap-4 p-3.5 rounded-xl border border-border-button-default bg-background-secondary-default">
+                <Avatar
+                  src={selectedUser?.avatarUrl || selectedUser?.avatar || undefined}
+                  initials={selectedUser?.firstName ? selectedUser.firstName[0].toUpperCase() : 'U'}
+                  size="xl"
+                  color="lime"
+                  className="shrink-0"
+                />
+                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                  <div>
+                    <p className="text-body-2-medium font-semibold text-text-primary">Profile Photo</p>
+                    <p className="text-caption-1-regular text-text-tertiary">
+                      {isSameUser(currentUser, selectedUser)
+                        ? 'JPG, PNG, WEBP, or GIF up to 5MB. Hosted securely on Cloudflare CDN.'
+                        : 'Avatars can only be modified by the account owner from their profile.'}
+                    </p>
+                  </div>
+                  {isSameUser(currentUser, selectedUser) && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="file"
+                        ref={avatarInputRef}
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAvatarUpload(file);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="small"
+                        leadingIcon={RiUpload2Line}
+                        disabled={uploadingAvatar}
+                        onClick={() => avatarInputRef.current?.click()}
+                      >
+                        {uploadingAvatar ? 'Uploading...' : 'Upload Photo'}
+                      </Button>
+                      {(selectedUser?.avatarUrl || selectedUser?.avatar) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="small"
+                          leadingIcon={RiDeleteBinLine}
+                          disabled={uploadingAvatar}
+                          onClick={handleAvatarRemove}
+                          className="text-text-error-primary hover:text-text-error-hover"
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <Input
                 label="Registered Email (Immutable)"
                 value={selectedUser?.email || ''}

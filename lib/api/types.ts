@@ -32,6 +32,8 @@ export interface User {
   firstName: string;
   lastName: string;
   role: Role | string;
+  avatarUrl?: string | null;
+  avatar?: string | null;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;

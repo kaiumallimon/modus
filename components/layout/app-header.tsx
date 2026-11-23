@@ -76,9 +76,9 @@ export function AppHeader({ title, breadcrumbs = [] }: { title?: string; breadcr
 
         {/* Team Avatars Cluster */}
         <div className="hidden sm:flex items-center ps-1">
-          <Avatar size="sm" initials="AK" color="neutral" className="ring-2 ring-background-primary-default" />
-          <Avatar size="sm" initials="MR" color="lime" className="ring-2 ring-background-primary-default -ms-2" />
-          <Avatar size="sm" initials="SP" color="pink" className="ring-2 ring-background-primary-default -ms-2" />
+          <Avatar size="sm" initials="A" color="neutral" className="ring-2 ring-background-primary-default" />
+          <Avatar size="sm" initials="M" color="lime" className="ring-2 ring-background-primary-default -ms-2" />
+          <Avatar size="sm" initials="S" color="pink" className="ring-2 ring-background-primary-default -ms-2" />
           <span className="size-6 -ms-2 rounded-full bg-background-secondary-default border border-border-button-default text-[10px] font-semibold text-text-secondary flex items-center justify-center ring-2 ring-background-primary-default">
             +3
           </span>
