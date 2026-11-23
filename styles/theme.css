@@ -181,7 +181,7 @@
   --color-text-white:           var(--color-white);
 
   /* Background */
-  --color-background-full:              #F5F6F0;
+  --color-background-full:              var(--color-white);
   /* Ticket detail, Figma 4509:12272. The raw #fafafa surface matches neutral/50. */
   --color-ticket-detail-surface: var(--color-white);
   --color-ticket-detail-low-background: var(--color-indigo-200);
@@ -445,7 +445,7 @@
   --color-input-disabled-text: color-mix(in srgb, var(--color-neutral-500) 40%, transparent);
 
   /* Background - Obsidian & Graphite hierarchy matching login */
-  --color-background-full:              #121512;
+  --color-background-full:              #1A1E1A;
   --color-ticket-detail-surface:        #1A1E1A;
   --color-ticket-detail-low-background: color-mix(in srgb, var(--color-indigo-950) 60%, transparent);
   --color-ticket-detail-low-hover: color-mix(in srgb, var(--color-indigo-950) 80%, transparent);
