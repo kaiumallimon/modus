@@ -313,6 +313,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
+      {/* Page Header at the top of the page */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-title-1-medium font-bold text-text-primary tracking-tight">Dashboard</h1>
+          <p className="text-body-2-medium text-text-secondary mt-0.5">
+            System overview, operational health, and active capability metrics
+          </p>
+        </div>
+      </div>
+
       {/* 1. Sub-Header Toolbar matching reference */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 bg-background-primary-default border border-border-button-default rounded-xl p-3 sm:px-4 shadow-2xs">
         {/* Left Toolbar Controls */}

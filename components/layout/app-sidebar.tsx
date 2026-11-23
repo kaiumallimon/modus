@@ -19,8 +19,14 @@ import {
   RiSearchLine,
   RiQuestionLine,
   RiFeedbackLine,
-  RiHeartPulseLine,
+  RiMoreFill,
 } from '@remixicon/react';
+import {
+  Button as AriaButton,
+  Dialog as AriaDialog,
+  DialogTrigger as AriaDialogTrigger,
+  Popover as AriaPopover,
+} from 'react-aria-components';
 import { useAuth } from '@/providers/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
@@ -29,6 +35,8 @@ import { cx } from '@/utils/cx';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Kbd } from '@/components/base/kbd/kbd';
 import { AlertDialog } from '@/components/base/modal/modal';
+import { ThemeToggle } from '@/components/application/theme/theme-toggle';
+import { toast } from '@/components/base/toast/toast';
 
 interface NavItemConfig {
   label: string;
@@ -330,82 +338,14 @@ export function AppSidebar() {
         </div>
 
         {/* PINNED FOOTER (NOT SCROLLABLE) */}
-        <div className="shrink-0 border-t border-border-button-default bg-background-primary-default">
-          {/* Pinned Helper & Settings Links */}
-          <div className="p-2 space-y-0.5">
-            <button
-              type="button"
-              className={cx(
-                'w-full flex items-center text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default rounded-lg transition-colors group cursor-pointer',
-                collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-3 py-1.5'
-              )}
-              title={collapsed ? 'Help Center' : undefined}
-            >
-              <RiQuestionLine className="size-4 shrink-0 text-text-tertiary group-hover:text-text-primary transition-colors" />
-              {!collapsed && <span>Help center</span>}
-            </button>
-
-            <button
-              type="button"
-              className={cx(
-                'w-full flex items-center text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default rounded-lg transition-colors group cursor-pointer',
-                collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-3 py-1.5'
-              )}
-              title={collapsed ? 'Feedback' : undefined}
-            >
-              <RiFeedbackLine className="size-4 shrink-0 text-text-tertiary group-hover:text-text-primary transition-colors" />
-              {!collapsed && <span>Feedback</span>}
-            </button>
-
-            {hasPermission('settings.read') && (
-              <Link
-                href="/settings"
-                className={cx(
-                  'flex items-center text-body-2-medium rounded-lg transition-colors group',
-                  collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-3 py-1.5',
-                  pathname === '/settings'
-                    ? 'bg-background-secondary-default text-text-primary font-semibold'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
-                )}
-                title={collapsed ? 'Settings' : undefined}
-              >
-                <RiSettings4Line
-                  className={cx(
-                    'size-4 shrink-0 transition-colors',
-                    pathname === '/settings'
-                      ? 'text-accent-600 dark:text-accent-400'
-                      : 'text-text-tertiary group-hover:text-text-primary'
-                  )}
-                />
-                {!collapsed && <span>Settings</span>}
-              </Link>
-            )}
+        <div className="shrink-0 border-t border-border-button-default bg-background-primary-default p-3 space-y-2.5">
+          {/* Theme Toggle moved into Sidebar Footer */}
+          <div className="flex items-center justify-center">
+            <ThemeToggle collapsed={collapsed} />
           </div>
 
-          {/* System Status Card matching reference upgrade card */}
-          {!collapsed && (
-            <div className="px-3 pb-2">
-              <div className="rounded-xl border border-border-button-default bg-background-secondary-default/50 hover:bg-background-secondary-default p-2.5 flex items-center justify-between transition-colors shadow-2xs">
-                <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="size-7 rounded-lg bg-accent-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                    <RiHeartPulseLine className="size-4" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-caption-1-semibold font-semibold text-text-primary truncate">
-                      Cluster Online
-                    </span>
-                    <span className="text-[10px] text-text-tertiary truncate">
-                      Self-Hosted • v1.0.0
-                    </span>
-                  </div>
-                </div>
-                <span className="size-2 rounded-full bg-status-lime-text" />
-              </div>
-            </div>
-          )}
-
-          {/* User Profile & Logout */}
-          <div className="p-3 border-t border-border-button-default">
+          {/* User Profile & Context Menu Three-Dot Action Trigger */}
+          <div className="pt-2 border-t border-separator-border">
             <div className={cx('flex items-center justify-between gap-2', collapsed && 'justify-center')}>
               <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
                 <Avatar
@@ -425,29 +365,71 @@ export function AppSidebar() {
                   </div>
                 )}
               </div>
-              {!collapsed && (
-                <button
-                  onClick={() => setLogoutDialogOpen(true)}
-                  className="p-1.5 rounded-lg text-text-tertiary hover:text-red-500 hover:bg-background-secondary-default transition-colors shrink-0"
-                  title="Log out"
-                  aria-label="Log out"
+
+              {/* Three-Dot Button Opening Context Menu */}
+              <AriaDialogTrigger>
+                <AriaButton
+                  className="size-7.5 rounded-lg border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-text-tertiary hover:text-text-primary flex items-center justify-center transition-colors shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-accent-500 cursor-pointer"
+                  aria-label="User preferences and options"
                 >
-                  <RiLogoutBoxRLine className="size-4" />
-                </button>
-              )}
+                  <RiMoreFill className="size-4" />
+                </AriaButton>
+                <AriaPopover
+                  placement={collapsed ? 'right bottom' : 'top end'}
+                  offset={8}
+                  className="z-110 w-48 rounded-xl border border-border-button-default bg-background-primary-default p-1.5 shadow-xl transition duration-150 ease-out outline-none"
+                >
+                  <AriaDialog className="outline-none flex flex-col gap-0.5">
+                    {({ close }) => (
+                      <>
+                        <Link
+                          href="/settings"
+                          onClick={close}
+                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors"
+                        >
+                          <RiSettings4Line className="size-4 text-text-tertiary" />
+                          <span>Settings</span>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            close();
+                            toast('Help Center documentation opened', { status: 'information' });
+                          }}
+                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors w-full text-start cursor-pointer"
+                        >
+                          <RiQuestionLine className="size-4 text-text-tertiary" />
+                          <span>Help center</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            close();
+                            toast('Feedback dialog opened', { status: 'information' });
+                          }}
+                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors w-full text-start cursor-pointer"
+                        >
+                          <RiFeedbackLine className="size-4 text-text-tertiary" />
+                          <span>Feedback</span>
+                        </button>
+                        <div className="my-1 border-t border-separator-border" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            close();
+                            setLogoutDialogOpen(true);
+                          }}
+                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-body-2-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors w-full text-start font-medium cursor-pointer"
+                        >
+                          <RiLogoutBoxRLine className="size-4" />
+                          <span>Log out</span>
+                        </button>
+                      </>
+                    )}
+                  </AriaDialog>
+                </AriaPopover>
+              </AriaDialogTrigger>
             </div>
-            {collapsed && (
-              <div className="mt-2 flex justify-center">
-                <button
-                  onClick={() => setLogoutDialogOpen(true)}
-                  className="p-1.5 rounded-lg text-text-tertiary hover:text-red-500 hover:bg-background-secondary-default transition-colors"
-                  title="Log out"
-                  aria-label="Log out"
-                >
-                  <RiLogoutBoxRLine className="size-4" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </aside>

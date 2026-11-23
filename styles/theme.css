@@ -563,22 +563,22 @@
   --color-notification-error-foreground:       var(--color-rose-300);
   --color-notification-center-background:      var(--color-neutral-900);
 
-  /* Borders and separators matching login #2A3027 */
-  --color-border-button-default:   #2A3027;
-  --color-border-button-hover:     #3D473A;
-  --color-border-button-active:    #4E5B4A;
-  --color-border-button-white:     #2A3027;
+  /* Borders and separators - softened subtle hairlines */
+  --color-border-button-default:   rgba(255, 255, 255, 0.08);
+  --color-border-button-hover:     rgba(255, 255, 255, 0.15);
+  --color-border-button-active:    rgba(255, 255, 255, 0.20);
+  --color-border-button-white:     rgba(255, 255, 255, 0.08);
   --color-border-error-default:    var(--color-red-400);
-  --color-border-checkbox-default: #2A3027;
-  --color-border-checkbox-hover:   #3D473A;
-  --color-border-checkbox-active:  #4E5B4A;
-  --color-border-component-detail-container: #2A3027;
-  --color-border-ai-profile-card:             #2A3027;
-  --color-border-table:            #2A3027;
-  --color-border-button-group:     #2A3027;
-  --color-border-sidebar-profile-hover: #3D473A;
-  --color-separator-border:        #2A3027;
-  --color-separator-border-strong: #3D473A;
+  --color-border-checkbox-default: rgba(255, 255, 255, 0.12);
+  --color-border-checkbox-hover:   rgba(255, 255, 255, 0.22);
+  --color-border-checkbox-active:  rgba(255, 255, 255, 0.28);
+  --color-border-component-detail-container: rgba(255, 255, 255, 0.08);
+  --color-border-ai-profile-card:             rgba(255, 255, 255, 0.08);
+  --color-border-table:            rgba(255, 255, 255, 0.06);
+  --color-border-button-group:     rgba(255, 255, 255, 0.08);
+  --color-border-sidebar-profile-hover: rgba(255, 255, 255, 0.15);
+  --color-separator-border:        rgba(255, 255, 255, 0.06);
+  --color-separator-border-strong: rgba(255, 255, 255, 0.12);
 
   /* Figma's dark table status pairs. */
   --color-status-lime-background:   color-mix(in srgb, var(--color-lime-950) 60%, transparent);
