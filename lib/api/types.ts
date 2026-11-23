@@ -324,3 +324,60 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+// Cloudflare CDN & Storage Types
+export interface StorageObject {
+  key: string;
+  name: string;
+  size: number;
+  formattedSize: string;
+  lastModified?: string;
+  etag?: string;
+  url: string;
+  isImage: boolean;
+  extension: string;
+  mimeType: string;
+  folder: string;
+}
+
+export interface StorageListResponse {
+  objects: StorageObject[];
+  folders: string[];
+  continuationToken?: string | null;
+  hasMore: boolean;
+  totalCount: number;
+  currentPrefix: string;
+  bucket: string;
+  publicBaseUrl: string;
+}
+
+export interface StorageStatsFormatItem {
+  category: string;
+  count: number;
+  sizeBytes: number;
+  percentage: number;
+  color: string;
+}
+
+export interface StorageTimelinePoint {
+  date: string;
+  bytes: number;
+  count: number;
+  bandwidthEstimateBytes: number;
+}
+
+export interface StorageStatsResponse {
+  bucketName: string;
+  status: 'active' | 'degraded' | 'unconfigured';
+  totalObjects: number;
+  totalSizeBytes: number;
+  formattedTotalSize: string;
+  publicBaseUrl: string;
+  storageLimitBytes?: number;
+  classAOperations: number;
+  classBOperations: number;
+  bandwidthSavedEstimated: string;
+  formatDistribution: StorageStatsFormatItem[];
+  timeline: StorageTimelinePoint[];
+}
+
+

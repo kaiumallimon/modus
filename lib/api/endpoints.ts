@@ -45,4 +45,10 @@ export const API_ENDPOINTS = {
   // Audit Logs
   AUDIT_LOGS: '/audit-logs',
   AUDIT_LOG_BY_ID: (id: string) => `/audit-logs/${id}`,
+
+  // CDN & Storage Explorer
+  STORAGE_STATS: '/storage/stats',
+  STORAGE_OBJECTS: '/storage/objects',
+  STORAGE_UPLOAD: '/storage/upload',
+  STORAGE_DELETE: '/storage/objects',
 } as const;

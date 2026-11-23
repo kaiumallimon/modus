@@ -220,7 +220,12 @@ export default function RolesPage() {
           </p>
         </div>
         {isSuperAdmin && (
-          <Button variant="primary" onClick={handleOpenCreate} leadingIcon={RiAddLine}>
+          <Button
+            variant="primary"
+            onClick={handleOpenCreate}
+            leadingIcon={RiAddLine}
+            className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-semibold text-[#171B18] shadow-2xs hover:shadow-xs transition-all"
+          >
             Create Role
           </Button>
         )}

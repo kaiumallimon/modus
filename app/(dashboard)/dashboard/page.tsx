@@ -9,6 +9,7 @@ import {
   RiEqualizerLine,
   RiDownloadLine,
   RiAddLine,
+  RiUserAddLine,
   RiInformationLine,
   RiSearchLine,
   RiEyeLine,
@@ -411,9 +412,9 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => toast('View customizer opened', { status: 'information' })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-body-2-medium font-medium text-text-secondary transition-colors shadow-2xs"
+            className="flex items-center gap-2 h-10 px-4 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-body-medium font-medium text-text-secondary transition-all shadow-2xs hover:shadow-xs"
           >
-            <RiEqualizerLine className="size-4" />
+            <RiEqualizerLine className="size-4.5" />
             <span>Customize</span>
           </button>
 
@@ -421,9 +422,9 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-body-2-medium font-medium text-text-secondary transition-colors shadow-2xs"
+            className="flex items-center gap-2.5 h-10 px-5 rounded-full border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-body-medium font-medium text-text-primary transition-all shadow-2xs hover:shadow-xs"
           >
-            <RiDownloadLine className="size-4" />
+            <RiDownloadLine className="size-5 text-text-primary" />
             <span>Export</span>
           </button>
 
@@ -431,17 +432,17 @@ export default function DashboardPage() {
           {hasPermission('users.create') ? (
             <Link
               href="/users"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent-500 hover:bg-accent-600 text-white font-semibold text-body-2-medium transition-colors shadow-2xs"
+              className="flex items-center gap-2.5 h-10 px-5 rounded-full bg-button-primary text-[#171B18] font-semibold text-body-medium transition-all shadow-2xs hover:shadow-xs"
             >
-              <RiAddLine className="size-4" />
+              <RiUserAddLine className="size-5 text-[#171B18]" />
               <span>Add New User</span>
             </Link>
           ) : (
             <Link
               href="/modules"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent-500 hover:bg-accent-600 text-white font-semibold text-body-2-medium transition-colors shadow-2xs"
+              className="flex items-center gap-2.5 h-10 px-5 rounded-full bg-button-primary text-[#171B18] font-semibold text-body-medium transition-all shadow-2xs hover:shadow-xs"
             >
-              <RiAddLine className="size-4" />
+              <RiAddLine className="size-5 text-[#171B18]" />
               <span>Explore Modules</span>
             </Link>
           )}
@@ -450,84 +451,84 @@ export default function DashboardPage() {
 
       {/* 2. KPI Statistics Card (revealed when Show Statistics is ON) */}
       {showStatistics && (
-        <div className="rounded-xl bg-background-primary-default border border-border-button-default p-5 shadow-2xs transition-all duration-300">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-separator-border gap-4 sm:gap-0">
+        <div className="rounded-2xl bg-background-primary-default border border-border-button-default shadow-2xs overflow-hidden transition-all duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-separator-border">
             {/* Stat 1: Total Users */}
-            <div className="sm:px-4 first:sm:ps-0 flex flex-col justify-between">
-              <div className="flex items-center gap-1 text-caption-1-medium text-text-secondary">
+            <div className="p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-caption-1-medium text-text-secondary font-medium">
                 <span>Total Users</span>
                 <RiInformationLine className="size-3.5 text-text-tertiary" />
               </div>
-              <div className="my-1.5">
-                <span className="text-display-3-bold font-bold text-text-primary tracking-tight">
+              <div className="mt-2">
+                <span className="text-title-1-medium font-bold text-text-primary tracking-tight">
                   {totalUsers > 0 ? totalUsers : '250'}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-caption-2-medium text-text-tertiary">
+              <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
                 <span>vs last month</span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold text-status-lime-text bg-status-lime-bg">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
                   +3 users
                 </span>
               </div>
             </div>
 
             {/* Stat 2: Active Modules */}
-            <div className="sm:px-4 flex flex-col justify-between pt-4 sm:pt-0">
-              <div className="flex items-center gap-1 text-caption-1-medium text-text-secondary">
+            <div className="p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-caption-1-medium text-text-secondary font-medium">
                 <span>Active Modules</span>
                 <RiInformationLine className="size-3.5 text-text-tertiary" />
               </div>
-              <div className="my-1.5">
-                <span className="text-display-3-bold font-bold text-text-primary tracking-tight">
+              <div className="mt-2">
+                <span className="text-title-1-medium font-bold text-text-primary tracking-tight">
                   {allModules.length < 10 ? `0${allModules.length}` : allModules.length}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-caption-2-medium text-text-tertiary">
+              <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
                 <span>vs platform base</span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold text-status-lime-text bg-status-lime-bg">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
                   100% operational
                 </span>
               </div>
             </div>
 
             {/* Stat 3: Audit Ledger Events */}
-            <div className="sm:px-4 flex flex-col justify-between pt-4 sm:pt-0">
-              <div className="flex items-center gap-1 text-caption-1-medium text-text-secondary">
+            <div className="p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-caption-1-medium text-text-secondary font-medium">
                 <span>Audit Ledger Events</span>
                 <RiInformationLine className="size-3.5 text-text-tertiary" />
               </div>
-              <div className="my-1.5">
-                <span className="text-display-3-bold font-bold text-text-primary tracking-tight">
+              <div className="mt-2">
+                <span className="text-title-1-medium font-bold text-text-primary tracking-tight">
                   {totalAudits > 0 ? totalAudits.toLocaleString() : '2,355'}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-caption-2-medium text-text-tertiary">
+              <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
                 <span>vs last week</span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold text-status-lime-text bg-status-lime-bg">
-                  ↑ 7%
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
+                  ↗ 7%
                 </span>
               </div>
             </div>
 
             {/* Stat 4: Cluster Health & Availability */}
-            <div className="sm:px-4 last:sm:pe-0 flex flex-col justify-between pt-4 sm:pt-0">
-              <div className="flex items-center gap-1 text-caption-1-medium text-text-secondary">
+            <div className="p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-caption-1-medium text-text-secondary font-medium">
                 <span>Cluster Availability</span>
                 <RiInformationLine className="size-3.5 text-text-tertiary" />
               </div>
-              <div className="my-1.5">
-                <span className="text-display-3-bold font-bold text-text-primary tracking-tight">
+              <div className="mt-2">
+                <span className="text-title-1-medium font-bold text-text-primary tracking-tight">
                   {isDbConnected ? '99.98%' : '94.20%'}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-caption-2-medium text-text-tertiary">
+              <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
                 <span>database status</span>
                 <span
                   className={cx(
-                    'inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold',
+                    'inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold',
                     isDbConnected
-                      ? 'text-status-lime-text bg-status-lime-bg'
-                      : 'text-status-rose-text bg-status-rose-bg'
+                      ? 'text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60'
+                      : 'text-rose-800 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/60'
                   )}
                 >
                   {isDbConnected ? 'MongoDB Online' : 'Degraded Cluster'}

@@ -679,7 +679,7 @@ export default function UsersPage() {
               <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
                 <span>vs last month</span>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
-                  ↑ {users.length > 0 ? Math.round((activeCount / users.length) * 100) : 100}%
+                  ↗ {users.length > 0 ? Math.round((activeCount / users.length) * 100) : 100}%
                 </span>
               </div>
             </div>
@@ -696,7 +696,7 @@ export default function UsersPage() {
               <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
                 <span>vs last month</span>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
-                  ↑ {adminCount > 0 ? `${adminCount} active` : '0 active'}
+                  ↗ {adminCount > 0 ? `${adminCount} active` : '0 active'}
                 </span>
               </div>
             </div>
@@ -912,7 +912,7 @@ export default function UsersPage() {
             size="medium"
             onClick={() => handleExport()}
             leadingIcon={RiDownloadLine}
-            className="h-9.5 px-3.5 gap-2 rounded-xl text-body-medium font-medium shadow-2xs hover:shadow-xs transition-all"
+            className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-medium shadow-2xs hover:shadow-xs transition-all"
           >
             Export
           </Button>
@@ -923,7 +923,7 @@ export default function UsersPage() {
               size="medium"
               onClick={handleOpenCreate}
               leadingIcon={RiUserAddLine}
-              className="h-9.5 px-4 gap-2 rounded-xl text-body-medium font-semibold shadow-2xs hover:shadow-xs transition-all"
+              className="h-10 px-5 gap-2.5 rounded-full text-body-medium font-semibold text-[#171B18] shadow-2xs hover:shadow-xs transition-all"
             >
               Add New User
             </Button>

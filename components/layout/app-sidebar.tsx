@@ -23,6 +23,7 @@ import {
   RiHomeLine,
   RiLifebuoyLine,
   RiBookOpenLine,
+  RiFolderCloudLine,
 } from '@remixicon/react';
 import {
   Button as AriaButton,
@@ -80,6 +81,12 @@ const BACKEND_NAV_ITEMS: NavItemConfig[] = [
     href: '/modules',
     icon: RiAppsLine,
     permission: 'modules.read',
+  },
+  {
+    label: 'CDN Explorer',
+    href: '/cdn',
+    icon: RiFolderCloudLine,
+    permission: 'cdn.read',
   },
   {
     label: 'Audit Logs',
