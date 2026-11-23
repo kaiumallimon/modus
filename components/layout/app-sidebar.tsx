@@ -69,12 +69,6 @@ const BACKEND_NAV_ITEMS: NavItemConfig[] = [
     permission: 'modules.read',
   },
   {
-    label: 'System Settings',
-    href: '/settings',
-    icon: RiSettings4Line,
-    permission: 'settings.read',
-  },
-  {
     label: 'Audit Logs',
     href: '/audit-logs',
     icon: RiFileHistoryLine,
@@ -137,13 +131,13 @@ export function AppSidebar() {
     <>
       <aside
         className={cx(
-          'relative flex flex-col bg-background-primary-default border-r border-border-button-default transition-all duration-300 ease-in-out shrink-0 z-30 select-none shadow-xs',
+          'relative flex flex-col bg-background-primary-default border-r border-border-button-default transition-all duration-300 ease-in-out shrink-0 z-30 select-none shadow-xs h-full overflow-hidden',
           collapsed ? 'w-18' : 'w-64'
         )}
       >
         {/* Workspace / Org Header with bgless logo */}
         {collapsed ? (
-          <div className="flex items-center justify-center h-16 border-b border-separator-border px-2">
+          <div className="flex items-center justify-center h-16 border-b border-separator-border px-2 shrink-0">
             <button
               onClick={() => setCollapsed(false)}
               className="group relative size-10 rounded-xl flex items-center justify-center hover:bg-background-secondary-default transition-all duration-150"
@@ -168,7 +162,7 @@ export function AppSidebar() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between h-16 px-4 border-b border-separator-border">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-separator-border shrink-0">
             <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden min-w-0">
               <div className="size-7 flex items-center justify-center shrink-0">
                 <Image
@@ -196,7 +190,7 @@ export function AppSidebar() {
         )}
 
         {/* Quick Search Bar (icon only when collapsed) */}
-        <div className="px-3 pt-3 pb-1">
+        <div className="px-3 pt-3 pb-1 shrink-0">
           {collapsed ? (
             <div className="flex justify-center">
               <button
@@ -225,8 +219,8 @@ export function AppSidebar() {
           )}
         </div>
 
-        {/* Nav List */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+        {/* Nav List - SCROLLABLE AREA */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5 min-h-0">
           {/* CORE PLATFORM FEATURES */}
           <div>
             {!collapsed && (
@@ -309,9 +303,12 @@ export function AppSidebar() {
               </nav>
             </div>
           )}
+        </div>
 
-          {/* Utility Links */}
-          <div className="pt-2 border-t border-separator-border space-y-0.5">
+        {/* PINNED FOOTER (NOT SCROLLABLE) */}
+        <div className="shrink-0 border-t border-separator-border bg-background-primary-default">
+          {/* Pinned Helper & Settings Links */}
+          <div className="p-2 space-y-0.5">
             <button
               type="button"
               className={cx(
@@ -323,6 +320,7 @@ export function AppSidebar() {
               <RiQuestionLine className="size-4 shrink-0 text-text-tertiary" />
               {!collapsed && <span>Help Center</span>}
             </button>
+
             <button
               type="button"
               className={cx(
@@ -334,64 +332,70 @@ export function AppSidebar() {
               <RiFeedbackLine className="size-4 shrink-0 text-text-tertiary" />
               {!collapsed && <span>Feedback</span>}
             </button>
-            <Link
-              href="/settings"
-              className={cx(
-                'flex items-center rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors',
-                collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5'
-              )}
-              title={collapsed ? 'System Settings' : undefined}
-            >
-              <RiSettings4Line className="size-4 shrink-0 text-text-tertiary" />
-              {!collapsed && <span>System Settings</span>}
-            </Link>
-          </div>
-        </div>
 
-        {/* User Footer Profile */}
-        <div className="p-3 border-t border-separator-border bg-background-primary-default">
-          <div className={cx('flex items-center justify-between gap-2', collapsed && 'justify-center')}>
-            <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
-              <Avatar
-                initials={user?.firstName ? user.firstName[0].toUpperCase() : 'M'}
-                size="md"
-                color="lime"
-                className="shrink-0 font-bold"
-              />
-              {!collapsed && (
-                <div className="flex flex-col min-w-0 truncate">
-                  <span className="text-body-medium font-semibold text-text-primary truncate">
-                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
-                  </span>
-                  <span className="text-caption-2-medium text-text-tertiary uppercase truncate">
-                    {user?.role?.replace('_', ' ') || 'Super Admin'}
-                  </span>
-                </div>
-              )}
-            </div>
-            {!collapsed && (
-              <button
-                onClick={() => setLogoutDialogOpen(true)}
-                className="p-1.5 rounded-lg text-text-tertiary hover:text-text-destructive hover:bg-background-tertiary-error transition-colors shrink-0"
-                title="Log out"
-                aria-label="Log out"
+            {hasPermission('settings.read') && (
+              <Link
+                href="/settings"
+                className={cx(
+                  'flex items-center rounded-xl text-body-2-medium transition-colors',
+                  collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5',
+                  pathname === '/settings'
+                    ? 'bg-accent-100 dark:bg-accent-950 text-accent-950 dark:text-accent-100 font-bold border border-accent-300 dark:border-accent-800 shadow-2xs'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
+                )}
+                title={collapsed ? 'Settings' : undefined}
               >
-                <RiLogoutBoxRLine className="size-4" />
-              </button>
+                <RiSettings4Line className={cx('size-4 shrink-0', pathname === '/settings' ? 'text-accent-700 dark:text-accent-300' : 'text-text-tertiary')} />
+                {!collapsed && <span>Settings</span>}
+              </Link>
             )}
           </div>
-          {collapsed && (
-            <div className="mt-2 flex justify-center">
-              <button
-                onClick={() => setLogoutDialogOpen(true)}
-                className="p-1.5 rounded-lg text-text-tertiary hover:text-text-destructive hover:bg-background-tertiary-error transition-colors"
-                title="Log out"
-                aria-label="Log out"
-              >
-                <RiLogoutBoxRLine className="size-4" />
-              </button>
+
+          {/* User Profile */}
+          <div className="p-3 border-t border-separator-border">
+            <div className={cx('flex items-center justify-between gap-2', collapsed && 'justify-center')}>
+              <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                <Avatar
+                  initials={user?.firstName ? user.firstName[0].toUpperCase() : 'M'}
+                  size="md"
+                  color="lime"
+                  className="shrink-0 font-bold"
+                />
+                {!collapsed && (
+                  <div className="flex flex-col min-w-0 truncate">
+                    <span className="text-body-medium font-semibold text-text-primary truncate">
+                      {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
+                    </span>
+                    <span className="text-caption-2-medium text-text-tertiary uppercase truncate">
+                      {user?.role?.replace('_', ' ') || 'Super Admin'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {!collapsed && (
+                <button
+                  onClick={() => setLogoutDialogOpen(true)}
+                  className="p-1.5 rounded-lg text-text-tertiary hover:text-text-destructive hover:bg-background-tertiary-error transition-colors shrink-0"
+                  title="Log out"
+                  aria-label="Log out"
+                >
+                  <RiLogoutBoxRLine className="size-4" />
+                </button>
+              )}
             </div>
-          )}
+            {collapsed && (
+              <div className="mt-2 flex justify-center">
+                <button
+                  onClick={() => setLogoutDialogOpen(true)}
+                  className="p-1.5 rounded-lg text-text-tertiary hover:text-text-destructive hover:bg-background-tertiary-error transition-colors"
+                  title="Log out"
+                  aria-label="Log out"
+                >
+                  <RiLogoutBoxRLine className="size-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 
