@@ -52,6 +52,7 @@ import { toast } from '@/components/base/toast/toast';
 import { Select, SelectItem } from '@/components/base/select/select';
 import { Pagination } from '@/components/base/pagination/pagination';
 import { SearchField } from '@/components/base/search-field/search-field';
+import { Tooltip, TooltipTrigger } from '@/components/base/tooltip/tooltip';
 import { getRoleDisplayName, isSameUser } from '@/lib/permissions';
 import { cx } from '@/utils/cx';
 
@@ -654,7 +655,17 @@ export default function UsersPage() {
             <div className="p-5 flex flex-col justify-between">
               <div className="flex items-center gap-1.5 text-caption-1-medium text-text-primary font-medium">
                 <span>Total Users</span>
-                <RiInformationLine className="size-3.5 text-text-tertiary" />
+                <TooltipTrigger delay={80}>
+                  <AriaButton
+                    className="inline-flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer rounded-full p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    aria-label="Total users info"
+                  >
+                    <RiInformationLine className="size-3.5" />
+                  </AriaButton>
+                  <Tooltip size="sm">
+                    Total registered employee and administrator accounts across the organization.
+                  </Tooltip>
+                </TooltipTrigger>
               </div>
               <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight">
                 {total}
@@ -671,7 +682,17 @@ export default function UsersPage() {
             <div className="p-5 flex flex-col justify-between">
               <div className="flex items-center gap-1.5 text-caption-1-medium text-text-primary font-medium">
                 <span>Active Accounts</span>
-                <RiInformationLine className="size-3.5 text-text-tertiary" />
+                <TooltipTrigger delay={80}>
+                  <AriaButton
+                    className="inline-flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer rounded-full p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    aria-label="Active accounts info"
+                  >
+                    <RiInformationLine className="size-3.5" />
+                  </AriaButton>
+                  <Tooltip size="sm">
+                    Accounts in active status with authorized login and operational permissions.
+                  </Tooltip>
+                </TooltipTrigger>
               </div>
               <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight">
                 {activeCount}
@@ -679,7 +700,7 @@ export default function UsersPage() {
               <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
                 <span>vs last month</span>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
-                  ↗ {users.length > 0 ? Math.round((activeCount / users.length) * 100) : 100}%
+                  + {users.length > 0 ? Math.round((activeCount / users.length) * 100) : 100}%
                 </span>
               </div>
             </div>
@@ -688,7 +709,17 @@ export default function UsersPage() {
             <div className="p-5 flex flex-col justify-between">
               <div className="flex items-center gap-1.5 text-caption-1-medium text-text-primary font-medium">
                 <span>Administrators</span>
-                <RiInformationLine className="size-3.5 text-text-tertiary" />
+                <TooltipTrigger delay={80}>
+                  <AriaButton
+                    className="inline-flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer rounded-full p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    aria-label="Administrators info"
+                  >
+                    <RiInformationLine className="size-3.5" />
+                  </AriaButton>
+                  <Tooltip size="sm">
+                    Members holding elevated Super Admin or Administrator governance privileges.
+                  </Tooltip>
+                </TooltipTrigger>
               </div>
               <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight">
                 {adminCount}
@@ -696,7 +727,7 @@ export default function UsersPage() {
               <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
                 <span>vs last month</span>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
-                  ↗ {adminCount > 0 ? `${adminCount} active` : '0 active'}
+                  + {adminCount > 0 ? `${adminCount} active` : '0 active'}
                 </span>
               </div>
             </div>
@@ -705,7 +736,17 @@ export default function UsersPage() {
             <div className="p-5 flex flex-col justify-between">
               <div className="flex items-center gap-1.5 text-caption-1-medium text-text-primary font-medium">
                 <span>Inactive Accounts</span>
-                <RiInformationLine className="size-3.5 text-text-tertiary" />
+                <TooltipTrigger delay={80}>
+                  <AriaButton
+                    className="inline-flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer rounded-full p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    aria-label="Inactive accounts info"
+                  >
+                    <RiInformationLine className="size-3.5" />
+                  </AriaButton>
+                  <Tooltip size="sm">
+                    Suspended or revoked accounts currently prohibited from authenticating.
+                  </Tooltip>
+                </TooltipTrigger>
               </div>
               <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight">
                 {inactiveCount}

@@ -68,6 +68,9 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, AlertDialog } from '@/compo
 import { Spinner } from '@/components/base/spinner/spinner';
 import { toast } from '@/components/base/toast/toast';
 import { Select, SelectItem } from '@/components/base/select/select';
+import { Tooltip, TooltipTrigger } from '@/components/base/tooltip/tooltip';
+import { CdnActivityChartCard } from '@/components/application/dashboard/cdn-activity-chart-card';
+import { CdnFormatChartCard } from '@/components/application/dashboard/cdn-format-chart-card';
 import { cx } from '@/utils/cx';
 
 export default function CdnExplorerPage() {
@@ -465,9 +468,6 @@ export default function CdnExplorerPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-display-5-bold text-text-primary">Cloudflare CDN Explorer</h1>
-            <Chip color="lime" variant="caption" className="font-mono">
-              R2 ZERO EGRESS
-            </Chip>
           </div>
           <p className="text-body-2-regular text-text-secondary mt-1">
             Browse bucket objects, monitor usage metrics, and distribute assets via Cloudflare CDN.
@@ -512,14 +512,25 @@ export default function CdnExplorerPage() {
         </div>
       </div>
 
-      {/* Stats Cards Section (Single unified segmented container matching Image 1) */}
+      {/* Stats Cards Section (Single unified segmented container with hover tooltips) */}
       <div className="rounded-2xl border border-border-button-default bg-background-primary-default shadow-2xs overflow-hidden animate-in fade-in duration-200">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-separator-border">
           {/* Card 1: Bucket Storage */}
           <div className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-caption-1-medium text-text-secondary font-medium">
               <span className="flex items-center gap-1.5">
-                Bucket Storage <RiInformationLine className="size-3.5 text-text-tertiary" />
+                Bucket Storage
+                <TooltipTrigger delay={80}>
+                  <AriaButton
+                    className="inline-flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer rounded-full p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    aria-label="Bucket storage information"
+                  >
+                    <RiInformationLine className="size-3.5" />
+                  </AriaButton>
+                  <Tooltip size="sm">
+                    Total storage volume of stored files and media currently held in this R2 bucket.
+                  </Tooltip>
+                </TooltipTrigger>
               </span>
               <RiCloudLine className="size-4 text-accent-600" />
             </div>
@@ -529,7 +540,7 @@ export default function CdnExplorerPage() {
             <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
               <span>vs last month</span>
               <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
-                ↗ 12%
+                +12%
               </span>
             </div>
           </div>
@@ -538,7 +549,18 @@ export default function CdnExplorerPage() {
           <div className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-caption-1-medium text-text-secondary font-medium">
               <span className="flex items-center gap-1.5">
-                Total Objects <RiInformationLine className="size-3.5 text-text-tertiary" />
+                Total Objects
+                <TooltipTrigger delay={80}>
+                  <AriaButton
+                    className="inline-flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer rounded-full p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    aria-label="Total objects information"
+                  >
+                    <RiInformationLine className="size-3.5" />
+                  </AriaButton>
+                  <Tooltip size="sm">
+                    Total count of distinct files, assets, and folders across this bucket.
+                  </Tooltip>
+                </TooltipTrigger>
               </span>
               <RiFolderCloudLine className="size-4 text-blue-500" />
             </div>
@@ -557,7 +579,18 @@ export default function CdnExplorerPage() {
           <div className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-caption-1-medium text-text-secondary font-medium">
               <span className="flex items-center gap-1.5">
-                Egress Savings <RiInformationLine className="size-3.5 text-text-tertiary" />
+                Egress Savings
+                <TooltipTrigger delay={80}>
+                  <AriaButton
+                    className="inline-flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer rounded-full p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    aria-label="Egress savings information"
+                  >
+                    <RiInformationLine className="size-3.5" />
+                  </AriaButton>
+                  <Tooltip size="sm">
+                    Estimated monthly egress bandwidth cost saved by using Cloudflare R2 zero-egress architecture.
+                  </Tooltip>
+                </TooltipTrigger>
               </span>
               <RiShieldCheckLine className="size-4 text-emerald-500" />
             </div>
@@ -576,12 +609,23 @@ export default function CdnExplorerPage() {
           <div className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-caption-1-medium text-text-secondary font-medium">
               <span className="flex items-center gap-1.5">
-                Public CDN Status <RiInformationLine className="size-3.5 text-text-tertiary" />
+                Public CDN Status
+                <TooltipTrigger delay={80}>
+                  <AriaButton
+                    className="inline-flex items-center justify-center text-text-tertiary hover:text-text-primary transition-colors cursor-pointer rounded-full p-0.5 outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    aria-label="Public CDN status information"
+                  >
+                    <RiInformationLine className="size-3.5" />
+                  </AriaButton>
+                  <Tooltip size="sm">
+                    Public edge delivery status and active edge subdomain for serving assets globally.
+                  </Tooltip>
+                </TooltipTrigger>
               </span>
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight font-mono truncate">
-              {stats?.bucketName || 'portfolio-website'}
+              {stats?.bucketName || 'modus'}
             </div>
             <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
               <span>status</span>
@@ -593,150 +637,17 @@ export default function CdnExplorerPage() {
         </div>
       </div>
 
-      {/* Interactive Usage Graphs Section */}
+      {/* BoardUI Charts Section */}
       {showMetrics && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Timeline & Growth Area Chart (2 Cols) */}
-          <div className="lg:col-span-2 p-5 rounded-2xl bg-background-primary-default border border-border-button-default shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-body-1-bold text-text-primary">Storage & Request Activity</h3>
-                <p className="text-caption-1-regular text-text-secondary">
-                  Daily distribution of stored bytes and CDN request throughput.
-                </p>
-              </div>
-              <div className="flex items-center gap-3 text-caption-2-medium">
-                <span className="flex items-center gap-1 text-text-secondary">
-                  <span className="size-2.5 rounded-full bg-accent-500" /> Storage Volume
-                </span>
-                <span className="flex items-center gap-1 text-text-secondary">
-                  <span className="size-2.5 rounded-full bg-blue-500" /> CDN Bandwidth
-                </span>
-              </div>
-            </div>
-
-            {/* SVG Spline Graph */}
-            <div className="h-48 w-full relative flex items-end">
-              <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 600 180">
-                <defs>
-                  <linearGradient id="cdnStorageGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#84cc16" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#84cc16" stopOpacity="0.0" />
-                  </linearGradient>
-                  <linearGradient id="cdnBandwidthGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-
-                {/* Grid guidelines */}
-                <line x1="0" y1="30" x2="600" y2="30" stroke="currentColor" strokeDasharray="3 3" className="text-border-button-default" />
-                <line x1="0" y1="90" x2="600" y2="90" stroke="currentColor" strokeDasharray="3 3" className="text-border-button-default" />
-                <line x1="0" y1="150" x2="600" y2="150" stroke="currentColor" strokeDasharray="3 3" className="text-border-button-default" />
-
-                {/* Storage Area Curve */}
-                <path
-                  d="M 0 170 Q 100 140, 200 110 T 400 70 T 600 40 L 600 180 L 0 180 Z"
-                  fill="url(#cdnStorageGrad)"
-                />
-                <path
-                  d="M 0 170 Q 100 140, 200 110 T 400 70 T 600 40"
-                  fill="none"
-                  stroke="#84cc16"
-                  strokeWidth="2.5"
-                />
-
-                {/* Bandwidth Area Curve */}
-                <path
-                  d="M 0 175 Q 120 160, 240 130 T 450 100 T 600 60 L 600 180 L 0 180 Z"
-                  fill="url(#cdnBandwidthGrad)"
-                />
-                <path
-                  d="M 0 175 Q 120 160, 240 130 T 450 100 T 600 60"
-                  fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth="2"
-                  strokeDasharray="4 2"
-                />
-
-                {/* Data points */}
-                <circle cx="200" cy="110" r="4" fill="#84cc16" className="ring-2 ring-white" />
-                <circle cx="400" cy="70" r="4" fill="#84cc16" className="ring-2 ring-white" />
-                <circle cx="600" cy="40" r="4" fill="#84cc16" className="ring-2 ring-white" />
-              </svg>
-            </div>
-
-            {/* X-axis date marks */}
-            <div className="flex justify-between text-[11px] text-text-tertiary font-mono pt-2 border-t border-border-button-default mt-1">
-              {stats?.timeline && stats.timeline.length > 0 ? (
-                stats.timeline.map((t, idx) => <span key={idx}>{t.date}</span>)
-              ) : (
-                <>
-                  <span>Nov 18</span>
-                  <span>Nov 20</span>
-                  <span>Nov 22</span>
-                  <span>Nov 24</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Storage Format Distribution (1 Col) */}
-          <div className="p-5 rounded-2xl bg-background-primary-default border border-border-button-default shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-body-1-bold text-text-primary">Format Breakdown</h3>
-                <RiPieChartLine className="size-4.5 text-text-tertiary" />
-              </div>
-              <p className="text-caption-1-regular text-text-secondary mb-4">
-                Storage footprint categorized by file extension.
-              </p>
-
-              {/* Progress Bar Breakdown */}
-              <div className="h-3 w-full rounded-full bg-background-secondary-default overflow-hidden flex mb-4">
-                {stats?.formatDistribution && stats.formatDistribution.length > 0 ? (
-                  stats.formatDistribution.map((item, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        width: `${item.percentage || (idx === 0 ? 100 : 0)}%`,
-                        backgroundColor: item.color,
-                      }}
-                      className="h-full transition-all duration-300"
-                      title={`${item.category}: ${item.count} items (${item.percentage}%)`}
-                    />
-                  ))
-                ) : (
-                  <div className="w-full h-full bg-accent-500" />
-                )}
-              </div>
-
-              {/* Format List */}
-              <div className="space-y-2.5">
-                {(stats?.formatDistribution || [
-                  { category: 'Images', count: objects.filter((o) => o.isImage).length, color: '#84cc16', percentage: 70 },
-                  { category: 'Documents', count: 0, color: '#3b82f6', percentage: 15 },
-                  { category: 'Media', count: 0, color: '#a855f7', percentage: 10 },
-                  { category: 'Data & Other', count: 0, color: '#64748b', percentage: 5 },
-                ]).map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-body-2-regular">
-                    <span className="flex items-center gap-2 text-text-secondary">
-                      <span className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
-                      {item.category}
-                    </span>
-                    <span className="font-mono text-text-primary font-medium text-caption-1-medium">
-                      {item.count} files ({item.percentage}%)
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-border-button-default text-[11px] text-text-tertiary flex items-center justify-between">
-              <span>Automatic WebP/AVIF delivery</span>
-              <span className="text-accent-600 font-semibold">Tier: Global Edge</span>
-            </div>
-          </div>
+          <CdnActivityChartCard
+            timeline={stats?.timeline}
+            className="lg:col-span-2"
+          />
+          <CdnFormatChartCard
+            formats={stats?.formatDistribution}
+            className="lg:col-span-1"
+          />
         </div>
       )}
 
