@@ -38,6 +38,7 @@ import { cx } from '@/utils/cx';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Kbd } from '@/components/base/kbd/kbd';
 import { AlertDialog } from '@/components/base/modal/modal';
+import { SettingsModal } from '@/components/application/settings/settings-modal';
 import { ThemeToggle } from '@/components/application/theme/theme-toggle';
 import { ScrollFade, useScrollFade } from '@/components/foundations/scroll-fade/scroll-fade';
 import { toast } from '@/components/base/toast/toast';
@@ -96,6 +97,7 @@ export function AppSidebar() {
   const [activeModules, setActiveModules] = useState<ModuleRegistration[]>([]);
   const [auditCount, setAuditCount] = useState<number | undefined>(undefined);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const scrollFade = useScrollFade();
 
   useEffect(() => {
@@ -136,6 +138,127 @@ export function AppSidebar() {
 
   const filteredNav = visibleNav.filter((item) =>
     item.label.toLowerCase().includes(searchQuery.toLowerCase().trim())
+  );
+
+  const renderUserMenuContent = (close: () => void) => (
+    <>
+      {/* Header: User name, email and Settings gear */}
+      <div className="flex items-center justify-between px-3 py-2.5">
+        <div className="flex flex-col min-w-0">
+          <span className="text-body-2-medium font-semibold text-text-primary truncate">
+            {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
+          </span>
+          <span className="text-caption-1-regular text-text-tertiary truncate">
+            {user?.email || 'admin@modus.local'}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            close();
+            setSettingsOpen(true);
+          }}
+          className="size-7.5 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0 cursor-pointer"
+          title="Settings"
+          aria-label="Settings"
+        >
+          <RiSettings3Line className="size-4.5" />
+        </button>
+      </div>
+
+      <div className="my-1 border-t border-separator-border" />
+
+      {/* Feedback Row */}
+      <button
+        type="button"
+        onClick={() => {
+          close();
+          toast('Feedback dialog opened', { status: 'information' });
+        }}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
+      >
+        <span>Feedback</span>
+        <RiFeedbackLine className="size-4.5 text-text-tertiary" />
+      </button>
+
+      {/* Settings Row */}
+      <button
+        type="button"
+        onClick={() => {
+          close();
+          setSettingsOpen(true);
+        }}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
+      >
+        <span>Settings</span>
+        <RiSettings3Line className="size-4.5 text-text-tertiary" />
+      </button>
+
+      {/* Theme Row with inline 3-option compact pill toggle */}
+      <div className="flex items-center justify-between px-3 py-1.5 rounded-xl text-body-2-medium text-text-secondary select-none">
+        <span>Theme</span>
+        <ThemeToggle label={false} />
+      </div>
+
+      {/* Home Page Link */}
+      <Link
+        href="/dashboard"
+        onClick={close}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start"
+      >
+        <span>Home Page</span>
+        <RiHomeLine className="size-4.5 text-text-tertiary" />
+      </Link>
+
+      {/* Help */}
+      <button
+        type="button"
+        onClick={() => {
+          close();
+          toast('Help Center documentation opened', { status: 'information' });
+        }}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
+      >
+        <span>Help</span>
+        <RiLifebuoyLine className="size-4.5 text-text-tertiary" />
+      </button>
+
+      {/* Docs */}
+      <button
+        type="button"
+        onClick={() => {
+          close();
+          toast('Platform documentation opened', { status: 'information' });
+        }}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
+      >
+        <span>Docs</span>
+        <RiBookOpenLine className="size-4.5 text-text-tertiary" />
+      </button>
+
+      {/* Log Out */}
+      <button
+        type="button"
+        onClick={() => {
+          close();
+          setLogoutDialogOpen(true);
+        }}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-error-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer group"
+      >
+        <span>Log Out</span>
+        <RiLogoutBoxRLine className="size-4.5 text-text-tertiary group-hover:text-text-error-primary" />
+      </button>
+
+      <div className="my-1 border-t border-separator-border" />
+
+      {/* All Systems Normal Status Row */}
+      <div className="flex items-center justify-between px-3 py-2 text-caption-1-medium">
+        <span className="text-accent-700 dark:text-accent-300 font-medium">
+          All systems normal.
+        </span>
+        <span className="size-2 rounded-full bg-accent-500 animate-pulse" />
+      </div>
+    </>
   );
 
   return (
@@ -389,109 +512,7 @@ export function AppSidebar() {
                   className="z-110 w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-2xl transition duration-150 ease-out outline-none select-none"
                 >
                   <AriaDialog className="outline-none flex flex-col gap-0.5">
-                    {({ close }) => (
-                      <>
-                        {/* Header: User name, email and Settings gear */}
-                        <div className="flex items-center justify-between px-3 py-2.5">
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-body-2-medium font-semibold text-text-primary truncate">
-                              {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
-                            </span>
-                            <span className="text-caption-1-regular text-text-tertiary truncate">
-                              {user?.email || 'admin@modus.local'}
-                            </span>
-                          </div>
-                          <Link
-                            href="/settings"
-                            onClick={close}
-                            className="size-7.5 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0"
-                            title="Settings"
-                          >
-                            <RiSettings3Line className="size-4.5" />
-                          </Link>
-                        </div>
-
-                        <div className="my-1 border-t border-separator-border" />
-
-                        {/* Feedback Row */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            close();
-                            toast('Feedback dialog opened', { status: 'information' });
-                          }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
-                        >
-                          <span>Feedback</span>
-                          <RiFeedbackLine className="size-4.5 text-text-tertiary" />
-                        </button>
-
-                        {/* Theme Row with inline 3-option compact pill toggle */}
-                        <div className="flex items-center justify-between px-3 py-1.5 rounded-xl text-body-2-medium text-text-secondary select-none">
-                          <span>Theme</span>
-                          <ThemeToggle label={false} />
-                        </div>
-
-                        {/* Home Page Link */}
-                        <Link
-                          href="/dashboard"
-                          onClick={close}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start"
-                        >
-                          <span>Home Page</span>
-                          <RiHomeLine className="size-4.5 text-text-tertiary" />
-                        </Link>
-
-                        {/* Help */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            close();
-                            toast('Help Center documentation opened', { status: 'information' });
-                          }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
-                        >
-                          <span>Help</span>
-                          <RiLifebuoyLine className="size-4.5 text-text-tertiary" />
-                        </button>
-
-                        {/* Docs */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            close();
-                            toast('Platform documentation opened', { status: 'information' });
-                          }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
-                        >
-                          <span>Docs</span>
-                          <RiBookOpenLine className="size-4.5 text-text-tertiary" />
-                        </button>
-
-                        {/* Log Out */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            close();
-                            setLogoutDialogOpen(true);
-                          }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-error-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer group"
-                        >
-                          <span>Log Out</span>
-                          <RiLogoutBoxRLine className="size-4.5 text-text-tertiary group-hover:text-text-error-primary" />
-                        </button>
-
-                        <div className="my-1 border-t border-separator-border" />
-
-                        {/* All Systems Normal Status Row */}
-                        <div className="flex items-center justify-between px-3 py-2 text-caption-1-medium">
-                          <span className="text-accent-700 dark:text-accent-300 font-medium">
-                            All systems normal.
-                          </span>
-                          <span className="size-2 rounded-full bg-accent-500 animate-pulse" />
-                        </div>
-                      </>
-                    )}
+                    {({ close }) => renderUserMenuContent(close)}
                   </AriaDialog>
                 </AriaPopover>
               </AriaDialogTrigger>
@@ -540,109 +561,7 @@ export function AppSidebar() {
                     className="z-110 w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-2xl transition duration-150 ease-out outline-none select-none"
                   >
                     <AriaDialog className="outline-none flex flex-col gap-0.5">
-                      {({ close }) => (
-                        <>
-                          {/* Header: User name, email and Settings gear */}
-                          <div className="flex items-center justify-between px-3 py-2.5">
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-body-2-medium font-semibold text-text-primary truncate">
-                                {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
-                              </span>
-                              <span className="text-caption-1-regular text-text-tertiary truncate">
-                                {user?.email || 'admin@modus.local'}
-                              </span>
-                            </div>
-                            <Link
-                              href="/settings"
-                              onClick={close}
-                              className="size-7.5 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0"
-                              title="Settings"
-                            >
-                              <RiSettings3Line className="size-4.5" />
-                            </Link>
-                          </div>
-
-                          <div className="my-1 border-t border-separator-border" />
-
-                          {/* Feedback Row */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              close();
-                              toast('Feedback dialog opened', { status: 'information' });
-                            }}
-                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
-                          >
-                            <span>Feedback</span>
-                            <RiFeedbackLine className="size-4.5 text-text-tertiary" />
-                          </button>
-
-                          {/* Theme Row with inline 3-option compact pill toggle */}
-                          <div className="flex items-center justify-between px-3 py-1.5 rounded-xl text-body-2-medium text-text-secondary select-none">
-                            <span>Theme</span>
-                            <ThemeToggle label={false} />
-                          </div>
-
-                          {/* Home Page Link */}
-                          <Link
-                            href="/dashboard"
-                            onClick={close}
-                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start"
-                          >
-                            <span>Home Page</span>
-                            <RiHomeLine className="size-4.5 text-text-tertiary" />
-                          </Link>
-
-                          {/* Help */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              close();
-                              toast('Help Center documentation opened', { status: 'information' });
-                            }}
-                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
-                          >
-                            <span>Help</span>
-                            <RiLifebuoyLine className="size-4.5 text-text-tertiary" />
-                          </button>
-
-                          {/* Docs */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              close();
-                              toast('Platform documentation opened', { status: 'information' });
-                            }}
-                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer"
-                          >
-                            <span>Docs</span>
-                            <RiBookOpenLine className="size-4.5 text-text-tertiary" />
-                          </button>
-
-                          {/* Log Out */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              close();
-                              setLogoutDialogOpen(true);
-                            }}
-                            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-error-primary hover:bg-background-secondary-default transition-colors text-start cursor-pointer group"
-                          >
-                            <span>Log Out</span>
-                            <RiLogoutBoxRLine className="size-4.5 text-text-tertiary group-hover:text-text-error-primary" />
-                          </button>
-
-                          <div className="my-1 border-t border-separator-border" />
-
-                          {/* All Systems Normal Status Row */}
-                          <div className="flex items-center justify-between px-3 py-2 text-caption-1-medium">
-                            <span className="text-accent-700 dark:text-accent-300 font-medium">
-                              All systems normal.
-                            </span>
-                            <span className="size-2 rounded-full bg-accent-500 animate-pulse" />
-                          </div>
-                        </>
-                      )}
+                      {({ close }) => renderUserMenuContent(close)}
                     </AriaDialog>
                   </AriaPopover>
                 </AriaDialogTrigger>
@@ -677,6 +596,13 @@ export function AppSidebar() {
         onConfirm={async () => {
           await logout();
         }}
+      />
+
+      {/* App-Wide Settings Modal */}
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        planArtSrc="/templates/settings-plan-art.png"
       />
     </>
   );

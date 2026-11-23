@@ -9,6 +9,7 @@ import { Button } from "@/components/base/buttons/button";
 import { DatePicker } from "@/components/base/date-picker/date-picker";
 import { Input } from "@/components/base/input/input";
 import { Switch } from "@/components/base/switch/switch";
+import { useAuth } from "@/providers/auth-provider";
 import { cx } from "@/utils/cx";
 import {
   SettingsCard,
@@ -76,6 +77,7 @@ function SavableInput({
 
 export function SettingsProfile({ onSaved }: { onSaved?: () => void } = {}) {
   const localize = useTemplateCopy();
+  const { user } = useAuth();
   const [birthDate, setBirthDate] = useState<CalendarDate>(new CalendarDate(1997, 7, 28));
   const [birthOpen, setBirthOpen] = useState(false);
   const birthTriggerRef = useRef<HTMLButtonElement>(null);
@@ -89,15 +91,23 @@ export function SettingsProfile({ onSaved }: { onSaved?: () => void } = {}) {
             aria-label="Email"
             type="email"
             leadingIcon={RiMailLine}
-            initialValue="hi@mertcan.works"
+            initialValue={user?.email || "admin@modus.local"}
             onSaved={onSaved}
           />
         </SettingsRow>
         <SettingsRow label="First name">
-          <SavableInput aria-label="First name" initialValue="Mertcan" onSaved={onSaved} />
+          <SavableInput
+            aria-label="First name"
+            initialValue={user?.firstName || "Modus"}
+            onSaved={onSaved}
+          />
         </SettingsRow>
         <SettingsRow label="Last name">
-          <SavableInput aria-label="Last name" initialValue="Esmergül" onSaved={onSaved} />
+          <SavableInput
+            aria-label="Last name"
+            initialValue={user?.lastName || "Admin"}
+            onSaved={onSaved}
+          />
         </SettingsRow>
         <SettingsRow label="Date of birth">
           <button
