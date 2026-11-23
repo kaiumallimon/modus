@@ -115,6 +115,44 @@ export interface PermissionDefinition {
   module: string;
 }
 
+export interface ModulePermissionsGroup {
+  module: string;
+  moduleName: string;
+  description: string;
+  permissions: PermissionDefinition[];
+}
+
+export interface AccessControlDashboardStats {
+  totalRoles: number;
+  systemRoles: number;
+  customRoles: number;
+  activeRoles: number;
+  inactiveRoles: number;
+  totalPermissions: number;
+  roleDistribution: Array<{
+    code: string;
+    name: string;
+    isSystem: boolean;
+    isActive: boolean;
+    userCount: number;
+    permissionsCount: number;
+  }>;
+}
+
+export interface UserEffectivePermissions {
+  userId: string;
+  humanId: string;
+  email: string;
+  role: string;
+  isSuperAdmin: boolean;
+  permissions: string[];
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface CreateRolePayload {
   code: string;
   name: string;

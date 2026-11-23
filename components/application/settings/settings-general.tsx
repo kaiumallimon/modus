@@ -1,183 +1,274 @@
 "use client";
 
-import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
-
-import { useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  RiTimeLine,
+  RiGlobalLine,
+  RiMoneyDollarCircleLine,
+  RiCalendarLine,
+  RiListOrdered2,
+  RiShieldLine,
+  RiSaveLine,
+} from "@remixicon/react";
+import { useAuth } from "@/providers/auth-provider";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { SystemSettings } from "@/lib/api/types";
 import { Button } from "@/components/base/buttons/button";
-import { Select, SelectItem } from "@/components/base/select/select";
+import { Input } from "@/components/base/input/input";
 import { Switch } from "@/components/base/switch/switch";
-import { PlanArtFlame } from "./plan-art-flame";
+import { Spinner } from "@/components/base/spinner/spinner";
+import { toast } from "@/components/base/toast/toast";
 import {
   SettingsCard,
   SettingsRow,
   SettingsSectionLabel,
 } from "./settings-rows";
 
-/**
- * Figma source: Board UI → "Settings/General" (node 4079:13037), the right
- * pane of the settings modal. Taller than the 614px modal, so the pane
- * scrolls within the shell.
- *
- * Sections, 24px apart:
- *   plan          "Current plan" chip, Ultra $149/mo, upgrade button, and the
- *                 artwork bleeding off the right edge under a radial fade
- *                 into the card background.
- *   limits        single row with a "Manage limits" button.
- *   pull requests two select rows (Review provider / PR destination).
- *   notifications four toggle rows, only "Critical requests" on by default.
- */
+export function SettingsGeneral({
+  planArtSrc: _planArtSrc,
+  onSaved,
+}: {
+  planArtSrc?: string;
+  onSaved?: () => void;
+}) {
+  const { isSuperAdmin, hasPermission } = useAuth();
 
-/** Compact white select trigger (h 32, radius/lg) per the Figma rows. */
-const SELECT_TRIGGER = "h-8 w-auto gap-1 rounded-lg px-2 py-1.5";
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-export function SettingsGeneral({ planArtSrc }: { planArtSrc?: string }) {
-  const localize = useTemplateCopy();
-  const [toggles, setToggles] = useState({
-    critical: true,
-    system: false,
-    sound: false,
-    dispatch: false,
-  });
+  // System settings state
+  const [defaultTimezone, setDefaultTimezone] = useState("UTC");
+  const [defaultLocale, setDefaultLocale] = useState("en-US");
+  const [defaultCurrency, setDefaultCurrency] = useState("USD");
+  const [dateFormat, setDateFormat] = useState("YYYY-MM-DD");
+  const [timeFormat, setTimeFormat] = useState("HH:mm:ss");
+  const [defaultPaginationLimit, setDefaultPaginationLimit] = useState(10);
+  const [allowPasswordReset, setAllowPasswordReset] = useState(true);
+  const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(60);
 
-  const setToggle = (key: keyof typeof toggles) => (value: boolean) =>
-    setToggles((t) => ({ ...t, [key]: value }));
+  const canEdit = isSuperAdmin && hasPermission("settings.update");
 
-  return localize((
-    <div className="flex w-full flex-col gap-6">
-      {/* Current plan */}
-      <div className="relative w-full overflow-hidden rounded-2xl bg-background-secondary-default">
-        {/* Artwork bleeding off the right edge, fading into the card bg.
-            Rendered through a WebGL shader: waving like a wind-torn flag with
-            a continuous burning-edge effect (see plan-art-flame.tsx). */}
-        <div aria-hidden className="absolute -top-[11px] start-[328px] size-[277px]">
-          <PlanArtFlame
-            src={planArtSrc}
-            className="size-full object-cover"
-          />
-          {/* Fades into the card, whatever colour that is: the stops mix the
-              card's own token rather than a hardcoded #f7f7f7, which stayed
-              white and haloed the artwork in dark mode. Mixing toward 0% of
-              the token instead of `transparent` also avoids the grey fringe
-              sRGB interpolation gives when a colour fades to rgba(0,0,0,0). */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `radial-gradient(closest-side at center,
-                color-mix(in srgb, var(--color-background-secondary-default) 0%, transparent) 13%,
-                color-mix(in srgb, var(--color-background-secondary-default) 13%, transparent) 37%,
-                color-mix(in srgb, var(--color-background-secondary-default) 85%, transparent) 86%,
-                var(--color-background-secondary-default) 100%)`,
-            }}
-          />
-        </div>
+  const loadSettings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiClient<SystemSettings>(API_ENDPOINTS.SETTINGS);
+      if (data) {
+        setDefaultTimezone(data.defaultTimezone || "UTC");
+        setDefaultLocale(data.defaultLocale || "en-US");
+        setDefaultCurrency(data.defaultCurrency || "USD");
+        setDateFormat(data.dateFormat || "YYYY-MM-DD");
+        setTimeFormat(data.timeFormat || "HH:mm:ss");
+        setDefaultPaginationLimit(data.defaultPaginationLimit || 10);
+        setAllowPasswordReset(data.allowPasswordReset ?? true);
+        setSessionTimeoutMinutes(data.sessionTimeoutMinutes || 60);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load system preferences");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        <div className="relative flex flex-col gap-2.5 py-3 pe-2.5 ps-3">
-          <div className="flex flex-col gap-2">
-            <span className="inline-flex w-fit items-center rounded-md bg-background-tertiary-default px-1.5 py-0.5 text-body-2-medium text-text-secondary">
-              Current plan
-            </span>
-            <div className="flex flex-col gap-0.5">
-              <p className="text-headline-medium text-text-primary">Ultra $149/mo</p>
-              <p className="text-body-2-regular text-text-secondary">
-                You are on 7x more usage than Regular.
-              </p>
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canEdit) return;
+
+    setSaving(true);
+    try {
+      await apiClient(API_ENDPOINTS.SETTINGS, {
+        method: "PATCH",
+        body: JSON.stringify({
+          defaultTimezone: defaultTimezone.trim(),
+          defaultLocale: defaultLocale.trim(),
+          defaultCurrency: defaultCurrency.toUpperCase().trim(),
+          dateFormat: dateFormat.trim(),
+          timeFormat: timeFormat.trim(),
+          defaultPaginationLimit: Number(defaultPaginationLimit),
+          allowPasswordReset,
+          sessionTimeoutMinutes: Number(sessionTimeoutMinutes),
+        }),
+      });
+
+      toast.success("System preferences saved successfully");
+      onSaved?.();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save system preferences");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Spinner size="md" className="text-accent-600" />
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSave} className="flex w-full flex-col gap-6">
+      {/* Localization & Display Formats */}
+      <div className="flex w-full flex-col gap-2">
+        <SettingsSectionLabel>Localization & Display Defaults</SettingsSectionLabel>
+        <SettingsCard>
+          <SettingsRow
+            label="System timezone"
+            description="Default canonical timezone for logs and timestamps"
+          >
+            <div className="w-52">
+              <Input
+                aria-label="Default timezone"
+                size="small"
+                value={defaultTimezone}
+                onChange={setDefaultTimezone}
+                isDisabled={!canEdit}
+                leadingIcon={RiTimeLine}
+              />
             </div>
-          </div>
-          <Button variant="secondary" size="small" className="w-fit">
-            Upgrade to Max
+          </SettingsRow>
+
+          <SettingsRow
+            label="Default locale"
+            description="BCP 47 language and region formatting code"
+          >
+            <div className="w-52">
+              <Input
+                aria-label="Default locale"
+                size="small"
+                value={defaultLocale}
+                onChange={setDefaultLocale}
+                isDisabled={!canEdit}
+                leadingIcon={RiGlobalLine}
+              />
+            </div>
+          </SettingsRow>
+
+          <SettingsRow
+            label="Base currency"
+            description="Default monetary currency representation"
+          >
+            <div className="w-52">
+              <Input
+                aria-label="Default currency"
+                size="small"
+                value={defaultCurrency}
+                onChange={(val) => setDefaultCurrency(val.toUpperCase())}
+                isDisabled={!canEdit}
+                leadingIcon={RiMoneyDollarCircleLine}
+              />
+            </div>
+          </SettingsRow>
+
+          <SettingsRow
+            label="Date format"
+            description="Format used to render calendar dates (e.g. YYYY-MM-DD)"
+          >
+            <div className="w-52">
+              <Input
+                aria-label="Date format"
+                size="small"
+                value={dateFormat}
+                onChange={setDateFormat}
+                isDisabled={!canEdit}
+                leadingIcon={RiCalendarLine}
+              />
+            </div>
+          </SettingsRow>
+
+          <SettingsRow
+            label="Time format"
+            description="Format used to render clock times (e.g. HH:mm:ss)"
+          >
+            <div className="w-52">
+              <Input
+                aria-label="Time format"
+                size="small"
+                value={timeFormat}
+                onChange={setTimeFormat}
+                isDisabled={!canEdit}
+              />
+            </div>
+          </SettingsRow>
+        </SettingsCard>
+      </div>
+
+      {/* Security & Application Policies */}
+      <div className="flex w-full flex-col gap-2">
+        <SettingsSectionLabel>Security Policies & Pagination</SettingsSectionLabel>
+        <SettingsCard>
+          <SettingsRow
+            label="Default pagination limit"
+            description="Number of records returned per page by default in lists"
+          >
+            <div className="w-52">
+              <Input
+                aria-label="Pagination limit"
+                size="small"
+                type="number"
+                value={String(defaultPaginationLimit)}
+                onChange={(val) => setDefaultPaginationLimit(Number(val) || 10)}
+                isDisabled={!canEdit}
+                leadingIcon={RiListOrdered2}
+              />
+            </div>
+          </SettingsRow>
+
+          <SettingsRow
+            label="Session timeout (Minutes)"
+            description="Minutes of inactivity before a session token expires"
+          >
+            <div className="w-52">
+              <Input
+                aria-label="Session timeout"
+                size="small"
+                type="number"
+                value={String(sessionTimeoutMinutes)}
+                onChange={(val) => setSessionTimeoutMinutes(Number(val) || 60)}
+                isDisabled={!canEdit}
+                leadingIcon={RiShieldLine}
+              />
+            </div>
+          </SettingsRow>
+
+          <SettingsRow
+            label="Self-service password reset"
+            description="Allow users to initiate password recovery via email"
+          >
+            <Switch
+              aria-label="Allow self-service password reset"
+              isSelected={allowPasswordReset}
+              onChange={setAllowPasswordReset}
+              isDisabled={!canEdit}
+            />
+          </SettingsRow>
+        </SettingsCard>
+      </div>
+
+      {!canEdit && (
+        <p className="text-caption-1-regular text-text-tertiary px-1">
+          System-level preferences can only be updated by Super Administrators.
+        </p>
+      )}
+
+      {canEdit && (
+        <div className="flex justify-end pt-2">
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={saving}
+            leadingIcon={RiSaveLine}
+            className="font-bold"
+          >
+            {saving ? "Saving Preferences..." : "Save System Preferences"}
           </Button>
         </div>
-      </div>
-
-      {/* Limits */}
-      <SettingsCard>
-        <SettingsRow label="Limits" description="You are on 7x more usage than Premium">
-          <Button variant="secondary" size="small">
-            Manage limits
-          </Button>
-        </SettingsRow>
-      </SettingsCard>
-
-      {/* Pull Requests */}
-      <div className="flex w-full flex-col gap-2">
-        <SettingsSectionLabel>Pull Requests</SettingsSectionLabel>
-        <SettingsCard>
-          <SettingsRow
-            label="Review provider"
-            description="Select Github or other providers for reviews"
-          >
-            <Select
-              aria-label="Review provider"
-              defaultSelectedKey="github"
-              triggerClassName={SELECT_TRIGGER}
-            >
-              <SelectItem id="github">GitHub</SelectItem>
-              <SelectItem id="gitlab">GitLab</SelectItem>
-              <SelectItem id="bitbucket">Bitbucket</SelectItem>
-            </Select>
-          </SettingsRow>
-          <SettingsRow
-            label="PR destination"
-            description="Open pull request links inside your app"
-          >
-            <Select
-              aria-label="PR destination"
-              defaultSelectedKey="inside"
-              triggerClassName={SELECT_TRIGGER}
-            >
-              <SelectItem id="inside">Inside BoardUI</SelectItem>
-              <SelectItem id="browser">In the browser</SelectItem>
-            </Select>
-          </SettingsRow>
-        </SettingsCard>
-      </div>
-
-      {/* Notifications */}
-      <div className="flex w-full flex-col gap-2">
-        <SettingsSectionLabel>Notifications</SettingsSectionLabel>
-        <SettingsCard>
-          <SettingsRow
-            label="Critical requests"
-            description="Get notified when the mode needs to make a critical decision"
-          >
-            <Switch
-              aria-label="Critical requests"
-              isSelected={toggles.critical}
-              onChange={setToggle("critical")}
-            />
-          </SettingsRow>
-          <SettingsRow
-            label="System notifications"
-            description="Show fundamental notifications when an agent completes a task"
-          >
-            <Switch
-              aria-label="System notifications"
-              isSelected={toggles.system}
-              onChange={setToggle("system")}
-            />
-          </SettingsRow>
-          <SettingsRow
-            label="Completion sound"
-            description="Sound effect a task is completed"
-          >
-            <Switch
-              aria-label="Completion sound"
-              isSelected={toggles.sound}
-              onChange={setToggle("sound")}
-            />
-          </SettingsRow>
-          <SettingsRow
-            label="Dispatch alerts"
-            description="Push notification on your phone when BoardUI messages you"
-          >
-            <Switch
-              aria-label="Dispatch alerts"
-              isSelected={toggles.dispatch}
-              onChange={setToggle("dispatch")}
-            />
-          </SettingsRow>
-        </SettingsCard>
-      </div>
-    </div>
-  ));
+      )}
+    </form>
+  );
 }

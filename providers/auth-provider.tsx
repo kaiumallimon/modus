@@ -10,8 +10,15 @@ import {
   LoginResponse,
   InstallationStatus,
   RoleDocument,
+  Role,
 } from '@/lib/api/types';
-import { hasPermission as checkPermission, hasAnyPermission as checkAny, hasAllPermissions as checkAll } from '@/lib/permissions';
+import {
+  hasPermission as checkPermission,
+  hasAnyPermission as checkAny,
+  hasAllPermissions as checkAll,
+  CORE_PERMISSIONS,
+  DEFAULT_ROLE_PERMISSIONS,
+} from '@/lib/permissions';
 
 interface AuthContextType {
   user: User | null;
@@ -20,6 +27,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isInstallationChecked: boolean;
   setupRequired: boolean;
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -41,14 +50,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [setupRequired, setSetupRequired] = useState<boolean>(false);
 
   const fetchRolePermissions = useCallback(async (roleCode: string) => {
+    // Populate built-in fallback permissions immediately
+    const fallback = DEFAULT_ROLE_PERMISSIONS[roleCode] || [];
+    setPermissions(fallback);
+
     try {
       const roles = await apiClient<RoleDocument[]>(API_ENDPOINTS.ROLES);
-      const matched = roles.find((r) => r.code === roleCode);
+      const matched = roles?.find((r) => r.code === roleCode);
       if (matched && matched.permissions) {
         setPermissions(matched.permissions);
       }
     } catch {
-      // Non-critical if permissions call fails
+      // Non-critical if permissions call fails (retains fallback)
     }
   }, []);
 
@@ -64,9 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const profile = await apiClient<User>(API_ENDPOINTS.AUTH_ME);
       setUser(profile);
-      if (profile.role === 'SUPER_ADMIN') {
-        // Super Admin has all permissions, populate full set
-        setPermissions(['*']);
+      if (profile.role === 'SUPER_ADMIN' || profile.role === Role.SUPER_ADMIN) {
+        // Super Admin has all permissions
+        setPermissions(CORE_PERMISSIONS.map((p) => p.id));
       } else {
         await fetchRolePermissions(String(profile.role));
       }
@@ -147,8 +160,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthTokens(res.tokens);
       setUser(res.user);
 
-      if (res.user.role === 'SUPER_ADMIN') {
-        setPermissions(['*']);
+      if (res.user.role === 'SUPER_ADMIN' || res.user.role === Role.SUPER_ADMIN) {
+        setPermissions(CORE_PERMISSIONS.map((p) => p.id));
       } else {
         await fetchRolePermissions(String(res.user.role));
       }
@@ -187,6 +200,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [user, permissions]
   );
 
+  const isSuperAdmin = Boolean(
+    user && (user.role === Role.SUPER_ADMIN || user.role === 'SUPER_ADMIN')
+  );
+  const isAdmin = Boolean(
+    isSuperAdmin || (user && (user.role === Role.ADMIN || user.role === 'ADMIN'))
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -196,6 +216,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isInstallationChecked,
         setupRequired,
+        isSuperAdmin,
+        isAdmin,
         login,
         logout,
         refreshProfile,

@@ -1,167 +1,249 @@
 "use client";
 
-import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
-
-import { useRef, useState, type ComponentProps } from "react";
-import { CalendarDate } from "@internationalized/date";
-import { RiCalendarLine, RiExternalLinkLine, RiLogoutCircleLine, RiMailLine } from "@remixicon/react";
+import { useState } from "react";
+import {
+  RiMailLine,
+  RiShieldUserLine,
+  RiUserLine,
+  RiLockPasswordLine,
+  RiKeyLine,
+  RiCheckLine,
+} from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
-import { DatePicker } from "@/components/base/date-picker/date-picker";
 import { Input } from "@/components/base/input/input";
-import { Switch } from "@/components/base/switch/switch";
+import { Chip } from "@/components/base/badges/chip";
+import { toast } from "@/components/base/toast/toast";
 import { useAuth } from "@/providers/auth-provider";
-import { cx } from "@/utils/cx";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { getRoleDisplayName } from "@/lib/permissions";
 import {
   SettingsCard,
   SettingsRow,
+  SettingsSectionLabel,
   SettingsValueField,
 } from "./settings-rows";
 
-/**
- * Figma source: Board UI → "Settings/Profile" (node 4081:13943), the right
- * pane of the settings modal.
- *
- * Two cards, 24px apart:
- *   1. identity   Email / First name / Last name as editable design-system
- *                 Inputs (small, 202px — mail icon on Email), Date of birth
- *                 (white date-picker trigger, 202px)
- *   2. account    BoardUI account → "Manage", Public profile toggle (on),
- *                 Device ID (muted, truncated), Log out from all devices.
- */
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-function formatBirthDate(date: CalendarDate) {
-  return `${date.day} ${MONTHS[date.month - 1]} ${date.year}`;
-}
-
-/**
- * Design-system Input that commits on Enter / blur: Enter just blurs the
- * field, and blur fires `onSaved` only when the value actually changed since
- * the last commit — so clicking in and out without typing stays silent.
- */
-function SavableInput({
-  initialValue,
-  onSaved,
-  ...inputProps
-}: { initialValue: string; onSaved?: () => void } & Omit<
-  ComponentProps<typeof Input>,
-  "value" | "onChange" | "defaultValue"
->) {
-  const localize = useTemplateCopy();
-  const [value, setValue] = useState(initialValue);
-  const committed = useRef(initialValue);
-
-  return localize((
-    <Input
-      size="small"
-      {...inputProps}
-      value={value}
-      onChange={setValue}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") (event.target as HTMLElement).blur();
-      }}
-      onBlur={() => {
-        if (value !== committed.current) {
-          committed.current = value;
-          onSaved?.();
-        }
-      }}
-      className={cx("w-[202px] shrink-0", inputProps.className)}
-    />
-  ));
-}
-
 export function SettingsProfile({ onSaved }: { onSaved?: () => void } = {}) {
-  const localize = useTemplateCopy();
-  const { user } = useAuth();
-  const [birthDate, setBirthDate] = useState<CalendarDate>(new CalendarDate(1997, 7, 28));
-  const [birthOpen, setBirthOpen] = useState(false);
-  const birthTriggerRef = useRef<HTMLButtonElement>(null);
-  const [publicProfile, setPublicProfile] = useState(true);
+  const { user, refreshProfile } = useAuth();
 
-  return localize((
+  // Profile editable fields
+  const [firstName, setFirstName] = useState(user?.firstName || "");
+  const [lastName, setLastName] = useState(user?.lastName || "");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password change fields
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const handleUpdateNames = async () => {
+    if (!user) return;
+    const userId = user._id || user.id;
+    if (!userId) return;
+
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error("First name and last name are required");
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      await apiClient(API_ENDPOINTS.USER_BY_ID(userId), {
+        method: "PATCH",
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+        }),
+      });
+
+      await refreshProfile();
+      toast.success("Profile information updated");
+      onSaved?.();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update profile");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword) {
+      toast.error("Current password is required");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await apiClient(API_ENDPOINTS.AUTH_CHANGE_PASSWORD, {
+        method: "POST",
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success("Password changed successfully");
+      onSaved?.();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to change password");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  return (
     <div className="flex w-full flex-col gap-6">
-      <SettingsCard>
-        <SettingsRow label="Email">
-          <SavableInput
-            aria-label="Email"
-            type="email"
-            leadingIcon={RiMailLine}
-            initialValue={user?.email || "admin@modus.local"}
-            onSaved={onSaved}
-          />
-        </SettingsRow>
-        <SettingsRow label="First name">
-          <SavableInput
-            aria-label="First name"
-            initialValue={user?.firstName || "Modus"}
-            onSaved={onSaved}
-          />
-        </SettingsRow>
-        <SettingsRow label="Last name">
-          <SavableInput
-            aria-label="Last name"
-            initialValue={user?.lastName || "Admin"}
-            onSaved={onSaved}
-          />
-        </SettingsRow>
-        <SettingsRow label="Date of birth">
-          <button
-            ref={birthTriggerRef}
-            type="button"
-            onClick={() => setBirthOpen((o) => !o)}
-            className={[
-              "flex h-8 w-[202px] shrink-0 cursor-pointer items-center gap-0.5 rounded-lg px-2",
-              "border border-border-button-default bg-background-primary-default shadow-xs",
-              "transition-colors duration-150 ease hover:bg-background-primary-hover",
-              "outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
-            ].join(" ")}
-          >
-            <RiCalendarLine className="size-[18px] shrink-0 text-foreground-icon-primary" aria-hidden />
-            <span className="px-0.5 text-body-regular whitespace-nowrap text-text-primary">
-              {formatBirthDate(birthDate)}
-            </span>
-          </button>
-          <DatePicker
-            aria-label="Date of birth"
-            triggerRef={birthTriggerRef}
-            isOpen={birthOpen}
-            onOpenChange={setBirthOpen}
-            value={birthDate}
-            onChange={(next) => next && setBirthDate(next)}
-          />
-        </SettingsRow>
-      </SettingsCard>
+      {/* Identity & Account */}
+      <div className="flex w-full flex-col gap-2">
+        <SettingsSectionLabel>Personal Identity</SettingsSectionLabel>
+        <SettingsCard>
+          <SettingsRow label="First name" description="Your given name">
+            <div className="flex items-center gap-2">
+              <Input
+                aria-label="First name"
+                size="small"
+                value={firstName}
+                onChange={setFirstName}
+                className="w-48"
+              />
+            </div>
+          </SettingsRow>
 
-      <SettingsCard>
-        <SettingsRow label="BoardUI account">
-          <Button variant="secondary" size="small" leadingIcon={RiExternalLinkLine}>
-            Manage
-          </Button>
-        </SettingsRow>
-        <SettingsRow
-          label="Public profile"
-          description="When enabled your profile page will be visible to anyone"
-        >
-          <Switch
-            aria-label="Public profile"
-            isSelected={publicProfile}
-            onChange={setPublicProfile}
-          />
-        </SettingsRow>
-        <SettingsRow label="Device ID">
-          <SettingsValueField muted>593e2611-b9e3-44e2-1289-ab3f9d21</SettingsValueField>
-        </SettingsRow>
-        <SettingsRow label="Log out from all devices">
-          <Button variant="secondary" size="small" leadingIcon={RiLogoutCircleLine}>
-            Logout
-          </Button>
-        </SettingsRow>
-      </SettingsCard>
+          <SettingsRow label="Last name" description="Your family name">
+            <div className="flex items-center gap-2">
+              <Input
+                aria-label="Last name"
+                size="small"
+                value={lastName}
+                onChange={setLastName}
+                className="w-48"
+              />
+              <Button
+                variant="secondary"
+                size="small"
+                disabled={
+                  savingProfile ||
+                  (firstName === (user?.firstName || "") && lastName === (user?.lastName || ""))
+                }
+                onClick={handleUpdateNames}
+                leadingIcon={RiCheckLine}
+              >
+                {savingProfile ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </SettingsRow>
+
+          <SettingsRow label="Registered email" description="Primary address used for system sign in">
+            <SettingsValueField icon={RiMailLine}>
+              {user?.email || "admin@modus.local"}
+            </SettingsValueField>
+          </SettingsRow>
+
+          <SettingsRow label="Human User ID" description="Unique human-readable identifier assigned to your account">
+            <SettingsValueField icon={RiUserLine}>
+              {user?.humanId || "MOD-10001"}
+            </SettingsValueField>
+          </SettingsRow>
+
+          <SettingsRow label="Assigned Role" description="Your security role and access control level">
+            <div className="flex items-center gap-2">
+              <Chip color="blue" variant="caption" className="flex items-center gap-1 font-mono">
+                <RiShieldUserLine className="size-3" />
+                {user?.role || "SUPER_ADMIN"}
+              </Chip>
+              <span className="text-body-2-regular text-text-secondary">
+                {getRoleDisplayName(String(user?.role || "SUPER_ADMIN"))}
+              </span>
+            </div>
+          </SettingsRow>
+        </SettingsCard>
+      </div>
+
+      {/* Security & Password */}
+      <div className="flex w-full flex-col gap-2">
+        <SettingsSectionLabel>Security & Credentials</SettingsSectionLabel>
+        <form onSubmit={handleChangePassword}>
+          <SettingsCard>
+            <SettingsRow
+              label="Current password"
+              description="Enter your existing account password to confirm identity"
+            >
+              <div className="w-52">
+                <Input
+                  aria-label="Current password"
+                  type="password"
+                  size="small"
+                  placeholder="••••••••"
+                  value={currentPassword}
+                  onChange={setCurrentPassword}
+                  leadingIcon={RiLockPasswordLine}
+                />
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="New password"
+              description="Must be at least 8 characters with strong entropy"
+            >
+              <div className="w-52">
+                <Input
+                  aria-label="New password"
+                  type="password"
+                  size="small"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={setNewPassword}
+                  leadingIcon={RiKeyLine}
+                />
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Confirm new password"
+              description="Re-type your new password to verify accuracy"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-52">
+                  <Input
+                    aria-label="Confirm new password"
+                    type="password"
+                    size="small"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    leadingIcon={RiKeyLine}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="small"
+                  disabled={savingPassword || !currentPassword || !newPassword || !confirmPassword}
+                >
+                  {savingPassword ? "Updating..." : "Update Password"}
+                </Button>
+              </div>
+            </SettingsRow>
+          </SettingsCard>
+        </form>
+      </div>
     </div>
-  ));
+  );
 }

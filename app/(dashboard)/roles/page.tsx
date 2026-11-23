@@ -6,11 +6,22 @@ import {
   RiEditLine,
   RiDeleteBinLine,
   RiLockLine,
+  RiShieldCheckLine,
+  RiShieldUserLine,
+  RiUserLine,
+  RiKeyLine,
+  RiCheckboxLine,
 } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
-import { RoleDocument, PermissionDefinition, Role } from '@/lib/api/types';
+import {
+  RoleDocument,
+  PermissionDefinition,
+  Role,
+  AccessControlDashboardStats,
+  ModulePermissionsGroup,
+} from '@/lib/api/types';
 import { Button } from '@/components/base/buttons/button';
 import { Input } from '@/components/base/input/input';
 import { Chip } from '@/components/base/badges/chip';
@@ -18,18 +29,25 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, AlertDialog } from '@/compo
 import { Spinner } from '@/components/base/spinner/spinner';
 import { toast } from '@/components/base/toast/toast';
 
+interface RoleWithUserCount extends RoleDocument {
+  userCount?: number;
+  permissionsCount?: number;
+}
+
 export default function RolesPage() {
   const { user: currentUser } = useAuth();
 
-  const [roles, setRoles] = useState<RoleDocument[]>([]);
+  const [roles, setRoles] = useState<RoleWithUserCount[]>([]);
   const [permissions, setPermissions] = useState<PermissionDefinition[]>([]);
+  const [groupedPermissions, setGroupedPermissions] = useState<ModulePermissionsGroup[]>([]);
+  const [stats, setStats] = useState<AccessControlDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<RoleDocument | null>(null);
-  const [deleteRoleDialog, setDeleteRoleDialog] = useState<RoleDocument | null>(null);
+  const [selectedRole, setSelectedRole] = useState<RoleWithUserCount | null>(null);
+  const [deleteRoleDialog, setDeleteRoleDialog] = useState<RoleWithUserCount | null>(null);
 
   // Form states
   const [formCode, setFormCode] = useState('');
@@ -42,12 +60,17 @@ export default function RolesPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [rolesRes, permsRes] = await Promise.all([
-        apiClient<RoleDocument[]>(API_ENDPOINTS.ROLES),
+      const [rolesRes, permsRes, groupedRes, statsRes] = await Promise.allSettled([
+        apiClient<RoleWithUserCount[]>(API_ENDPOINTS.ROLES),
         apiClient<PermissionDefinition[]>(API_ENDPOINTS.PERMISSIONS),
+        apiClient<ModulePermissionsGroup[]>(API_ENDPOINTS.PERMISSIONS_GROUPED),
+        apiClient<AccessControlDashboardStats>(API_ENDPOINTS.ROLE_STATS),
       ]);
-      setRoles(rolesRes || []);
-      setPermissions(permsRes || []);
+
+      if (rolesRes.status === 'fulfilled') setRoles(rolesRes.value || []);
+      if (permsRes.status === 'fulfilled') setPermissions(permsRes.value || []);
+      if (groupedRes.status === 'fulfilled') setGroupedPermissions(groupedRes.value || []);
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value || null);
     } catch (err: any) {
       toast.error(err.message || 'Failed to load roles and permissions');
     } finally {
@@ -59,13 +82,18 @@ export default function RolesPage() {
     loadData();
   }, [loadData]);
 
-  // Group permissions by module
-  const permsByModule = permissions.reduce<Record<string, PermissionDefinition[]>>((acc, perm) => {
-    const mod = perm.module || 'general';
-    if (!acc[mod]) acc[mod] = [];
-    acc[mod].push(perm);
-    return acc;
-  }, {});
+  // Fallback group permissions by module if grouped endpoint is not yet loaded
+  const permsByModule: Record<string, PermissionDefinition[]> = groupedPermissions.length > 0
+    ? groupedPermissions.reduce<Record<string, PermissionDefinition[]>>((acc, grp) => {
+        acc[grp.module] = grp.permissions;
+        return acc;
+      }, {})
+    : permissions.reduce<Record<string, PermissionDefinition[]>>((acc, perm) => {
+        const mod = perm.module || 'general';
+        if (!acc[mod]) acc[mod] = [];
+        acc[mod].push(perm);
+        return acc;
+      }, {});
 
   const handleOpenCreate = () => {
     setFormCode('');
@@ -76,7 +104,7 @@ export default function RolesPage() {
     setCreateModalOpen(true);
   };
 
-  const handleOpenEdit = (role: RoleDocument) => {
+  const handleOpenEdit = (role: RoleWithUserCount) => {
     setSelectedRole(role);
     setFormCode(role.code);
     setFormName(role.name);
@@ -90,6 +118,16 @@ export default function RolesPage() {
     setFormPermissions((prev) =>
       prev.includes(permId) ? prev.filter((p) => p !== permId) : [...prev, permId]
     );
+  };
+
+  const toggleModulePermissions = (modulePerms: PermissionDefinition[]) => {
+    const moduleIds = modulePerms.map((p) => p.id);
+    const allSelected = moduleIds.every((id) => formPermissions.includes(id));
+    if (allSelected) {
+      setFormPermissions((prev) => prev.filter((id) => !moduleIds.includes(id)));
+    } else {
+      setFormPermissions((prev) => Array.from(new Set([...prev, ...moduleIds])));
+    }
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -178,7 +216,7 @@ export default function RolesPage() {
         <div>
           <h1 className="text-title-2-medium text-text-primary">Roles & Permissions</h1>
           <p className="text-body-medium text-text-secondary">
-            Role-Based Access Control (RBAC) governance and permission mappings ({roles.length} roles defined)
+            Role-Based Access Control (RBAC) governance, authorization policies, and module permission mappings
           </p>
         </div>
         {isSuperAdmin && (
@@ -187,6 +225,51 @@ export default function RolesPage() {
           </Button>
         )}
       </div>
+
+      {/* RBAC Metric Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+          <div className="bg-background-primary-default border border-border-button-default rounded-xl p-3.5 shadow-2xs">
+            <span className="text-caption-2-medium uppercase text-text-tertiary">Total Roles</span>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-headline-medium text-text-primary">{stats.totalRoles}</span>
+              <RiShieldUserLine className="size-5 text-accent-600" />
+            </div>
+          </div>
+
+          <div className="bg-background-primary-default border border-border-button-default rounded-xl p-3.5 shadow-2xs">
+            <span className="text-caption-2-medium uppercase text-text-tertiary">System Roles</span>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-headline-medium text-text-primary">{stats.systemRoles}</span>
+              <RiLockLine className="size-5 text-text-tertiary" />
+            </div>
+          </div>
+
+          <div className="bg-background-primary-default border border-border-button-default rounded-xl p-3.5 shadow-2xs">
+            <span className="text-caption-2-medium uppercase text-text-tertiary">Custom Roles</span>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-headline-medium text-text-primary">{stats.customRoles}</span>
+              <RiShieldCheckLine className="size-5 text-blue-500" />
+            </div>
+          </div>
+
+          <div className="bg-background-primary-default border border-border-button-default rounded-xl p-3.5 shadow-2xs">
+            <span className="text-caption-2-medium uppercase text-text-tertiary">Active Roles</span>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-headline-medium text-text-primary">{stats.activeRoles}</span>
+              <span className="size-2 rounded-full bg-accent-500" />
+            </div>
+          </div>
+
+          <div className="bg-background-primary-default border border-border-button-default rounded-xl p-3.5 shadow-2xs">
+            <span className="text-caption-2-medium uppercase text-text-tertiary">Total Permissions</span>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-headline-medium text-text-primary">{stats.totalPermissions}</span>
+              <RiKeyLine className="size-5 text-text-tertiary" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex h-64 items-center justify-center">
@@ -199,29 +282,41 @@ export default function RolesPage() {
             return (
               <div
                 key={role._id}
-                className="bg-background-primary-default border border-border-button-default rounded-xl p-5 shadow-sm flex flex-col justify-between space-y-4"
+                className="bg-background-primary-default border border-border-button-default rounded-xl p-5 shadow-2xs flex flex-col justify-between space-y-4"
               >
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-caption-1-semibold text-accent-800 bg-accent-100 px-2 py-0.5 rounded-md">
+                    <span className="font-mono text-caption-1-semibold text-accent-800 dark:text-accent-300 bg-accent-50 dark:bg-accent-950/40 px-2 py-0.5 rounded-md border border-accent-200 dark:border-accent-800">
                       {role.code}
                     </span>
-                    {isSystemRole ? (
-                      <Chip color="neutral" variant="caption" className="flex items-center gap-1">
-                        <RiLockLine className="size-3" /> System
-                      </Chip>
-                    ) : (
-                      <Chip color="blue" variant="caption">
-                        Custom
-                      </Chip>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {isSystemRole ? (
+                        <Chip color="neutral" variant="caption" className="flex items-center gap-1">
+                          <RiLockLine className="size-3" /> System
+                        </Chip>
+                      ) : (
+                        <Chip color="blue" variant="caption">
+                          Custom
+                        </Chip>
+                      )}
+                    </div>
                   </div>
+
                   <div>
                     <h2 className="text-title-3-semibold text-text-primary">{role.name}</h2>
-                    <p className="text-caption-1-medium text-text-secondary line-clamp-2 mt-1">
+                    <p className="text-caption-1-medium text-text-secondary line-clamp-2 mt-0.5">
                       {role.description || 'No description provided.'}
                     </p>
                   </div>
+
+                  {/* User assignment stat */}
+                  <div className="flex items-center gap-1.5 text-caption-2-medium text-text-secondary pt-1">
+                    <RiUserLine className="size-3.5 text-text-tertiary" />
+                    <span>
+                      {role.userCount !== undefined ? `${role.userCount} assigned user${role.userCount === 1 ? '' : 's'}` : '0 assigned users'}
+                    </span>
+                  </div>
+
                   <div className="pt-2">
                     <p className="text-caption-2-medium text-text-tertiary uppercase mb-1">
                       Permissions ({role.permissions?.length || 0})
@@ -298,7 +393,7 @@ export default function RolesPage() {
             />
             <ModalBody className="space-y-4 max-h-[65vh] overflow-y-auto">
               {formError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-caption-1-medium rounded-xl">
+                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-caption-1-medium rounded-xl">
                   {formError}
                 </div>
               )}
@@ -328,39 +423,52 @@ export default function RolesPage() {
               {/* Permission Matrix Selection */}
               <div className="space-y-3 pt-2 border-t border-separator-border">
                 <p className="text-caption-1-semibold text-text-primary">Assign Permissions</p>
-                {Object.entries(permsByModule).map(([mod, perms]) => (
-                  <div key={mod} className="p-3 bg-background-secondary-default rounded-xl space-y-2 border border-separator-border">
-                    <p className="text-caption-2-medium text-text-tertiary uppercase font-bold tracking-wider">
-                      Module: {mod}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {perms.map((p) => {
-                        const checked = formPermissions.includes(p.id);
-                        return (
-                          <label
-                            key={p.id}
-                            className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer border transition-colors ${
-                              checked
-                                ? 'bg-accent-100/60 border-accent-300'
-                                : 'bg-background-primary-default border-border-button-default hover:bg-background-primary-hover'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => togglePermission(p.id)}
-                              className="mt-1 rounded text-accent-600 focus:ring-accent-500"
-                            />
-                            <div className="flex flex-col text-caption-1-medium leading-tight">
-                              <span className="font-semibold text-text-primary">{p.name}</span>
-                              <span className="text-[11px] text-text-tertiary">{p.description}</span>
-                            </div>
-                          </label>
-                        );
-                      })}
+                {Object.entries(permsByModule).map(([mod, perms]) => {
+                  const allSelected = perms.every((p) => formPermissions.includes(p.id));
+                  return (
+                    <div key={mod} className="p-3 bg-background-secondary-default rounded-xl space-y-2 border border-separator-border">
+                      <div className="flex items-center justify-between">
+                        <p className="text-caption-2-medium text-text-tertiary uppercase font-bold tracking-wider">
+                          Module: {mod}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => toggleModulePermissions(perms)}
+                          className="text-[11px] text-accent-700 dark:text-accent-300 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <RiCheckboxLine className="size-3" />
+                          {allSelected ? 'Deselect All' : 'Select All'}
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {perms.map((p) => {
+                          const checked = formPermissions.includes(p.id);
+                          return (
+                            <label
+                              key={p.id}
+                              className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer border transition-colors ${
+                                checked
+                                  ? 'bg-accent-100/60 dark:bg-accent-950/60 border-accent-300 dark:border-accent-800'
+                                  : 'bg-background-primary-default border-border-button-default hover:bg-background-secondary-hover'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => togglePermission(p.id)}
+                                className="mt-1 rounded text-accent-600 focus:ring-accent-500"
+                              />
+                              <div className="flex flex-col text-caption-1-medium leading-tight">
+                                <span className="font-semibold text-text-primary">{p.name}</span>
+                                <span className="text-[11px] text-text-tertiary">{p.description}</span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </ModalBody>
             <ModalFooter>
@@ -385,7 +493,7 @@ export default function RolesPage() {
             />
             <ModalBody className="space-y-4 max-h-[65vh] overflow-y-auto">
               {formError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-caption-1-medium rounded-xl">
+                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-caption-1-medium rounded-xl">
                   {formError}
                 </div>
               )}
@@ -409,39 +517,52 @@ export default function RolesPage() {
               {/* Permission Matrix Selection */}
               <div className="space-y-3 pt-2 border-t border-separator-border">
                 <p className="text-caption-1-semibold text-text-primary">Permissions Assignment</p>
-                {Object.entries(permsByModule).map(([mod, perms]) => (
-                  <div key={mod} className="p-3 bg-background-secondary-default rounded-xl space-y-2 border border-separator-border">
-                    <p className="text-caption-2-medium text-text-tertiary uppercase font-bold tracking-wider">
-                      Module: {mod}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {perms.map((p) => {
-                        const checked = formPermissions.includes(p.id);
-                        return (
-                          <label
-                            key={p.id}
-                            className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer border transition-colors ${
-                              checked
-                                ? 'bg-accent-100/60 border-accent-300'
-                                : 'bg-background-primary-default border-border-button-default hover:bg-background-primary-hover'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => togglePermission(p.id)}
-                              className="mt-1 rounded text-accent-600 focus:ring-accent-500"
-                            />
-                            <div className="flex flex-col text-caption-1-medium leading-tight">
-                              <span className="font-semibold text-text-primary">{p.name}</span>
-                              <span className="text-[11px] text-text-tertiary">{p.description}</span>
-                            </div>
-                          </label>
-                        );
-                      })}
+                {Object.entries(permsByModule).map(([mod, perms]) => {
+                  const allSelected = perms.every((p) => formPermissions.includes(p.id));
+                  return (
+                    <div key={mod} className="p-3 bg-background-secondary-default rounded-xl space-y-2 border border-separator-border">
+                      <div className="flex items-center justify-between">
+                        <p className="text-caption-2-medium text-text-tertiary uppercase font-bold tracking-wider">
+                          Module: {mod}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => toggleModulePermissions(perms)}
+                          className="text-[11px] text-accent-700 dark:text-accent-300 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <RiCheckboxLine className="size-3" />
+                          {allSelected ? 'Deselect All' : 'Select All'}
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {perms.map((p) => {
+                          const checked = formPermissions.includes(p.id);
+                          return (
+                            <label
+                              key={p.id}
+                              className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer border transition-colors ${
+                                checked
+                                  ? 'bg-accent-100/60 dark:bg-accent-950/60 border-accent-300 dark:border-accent-800'
+                                  : 'bg-background-primary-default border-border-button-default hover:bg-background-secondary-hover'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => togglePermission(p.id)}
+                                className="mt-1 rounded text-accent-600 focus:ring-accent-500"
+                              />
+                              <div className="flex flex-col text-caption-1-medium leading-tight">
+                                <span className="font-semibold text-text-primary">{p.name}</span>
+                                <span className="text-[11px] text-text-tertiary">{p.description}</span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </ModalBody>
             <ModalFooter>

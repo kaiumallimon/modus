@@ -24,7 +24,10 @@ export const API_ENDPOINTS = {
   // Roles & Permissions
   ROLES: '/roles',
   ROLE_BY_ID: (id: string) => `/roles/${id}`,
+  ROLE_STATS: '/roles/stats',
   PERMISSIONS: '/permissions',
+  PERMISSIONS_GROUPED: '/permissions/grouped',
+  USER_PERMISSIONS: (id: string) => `/users/${id}/permissions`,
 
   // Organization
   ORGANIZATION: '/organization',
