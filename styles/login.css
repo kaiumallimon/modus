@@ -15,24 +15,29 @@
   background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
 }
 
-/* Chrome/Safari autofill override to preserve design palette */
+/* Chrome/Safari autofill override to preserve design palette seamlessly */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 999px #ffffff inset !important;
-  box-shadow: 0 0 0 999px #ffffff inset !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
   -webkit-text-fill-color: #171B18 !important;
   caret-color: #171B18 !important;
-  transition: background-color 9999s ease;
+  transition: background-color 5000000s ease-in-out 0s !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
 }
 
 .dark input:-webkit-autofill,
 .dark input:-webkit-autofill:hover,
 .dark input:-webkit-autofill:focus,
 .dark input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 999px #1D211D inset !important;
-  box-shadow: 0 0 0 999px #1D211D inset !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
   -webkit-text-fill-color: #F3F5EE !important;
   caret-color: #F3F5EE !important;
+  transition: background-color 5000000s ease-in-out 0s !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
 }

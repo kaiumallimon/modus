@@ -1,22 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useId, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  RiMailLine,
-  RiKeyLine,
-  RiLockPasswordLine,
   RiEyeLine,
   RiEyeOffLine,
-  RiArrowRightLine,
   RiArrowLeftLine,
   RiCheckboxCircleLine,
   RiMailSendLine,
   RiInformationLine,
   RiCheckLine,
-  RiCloseLine,
+  RiErrorWarningLine,
 } from '@remixicon/react';
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
@@ -26,9 +22,14 @@ import {
 } from '@/lib/api/types';
 import { Button } from '@/components/base/buttons/button';
 import { Input } from '@/components/base/input/input';
+import { Spinner } from '@/components/base/spinner/spinner';
+import { ThemeToggle } from '@/components/application/theme/theme-toggle';
 import { toast } from '@/components/base/toast/toast';
 
 type ResetStep = 'REQUEST_TOKEN' | 'RESET_PASSWORD' | 'SUCCESS';
+
+const inputFieldStyles =
+  '!h-11 px-3.5 !rounded-xl !bg-white dark:!bg-[#1D211D] border border-[#E4E8DD] dark:border-[#2C332A] hover:border-[#CCD2C2] dark:hover:border-[#3D473A] focus-within:!border-[#8DBA20] focus-within:!ring-3 focus-within:!ring-[#A5D632]/20 !ring-0 transition-all duration-150 shadow-2xs';
 
 function ForgotPasswordContent() {
   const router = useRouter();
@@ -48,6 +49,10 @@ function ForgotPasswordContent() {
   const [errorMessage, setErrorMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
 
+  const identifierRef = useRef<HTMLInputElement>(null);
+  const tokenRef = useRef<HTMLInputElement>(null);
+  const errorId = useId();
+
   // If URL changes with token dynamically, jump directly to token step
   useEffect(() => {
     if (urlToken && !token) {
@@ -64,7 +69,7 @@ function ForgotPasswordContent() {
     e.preventDefault();
     const cleanId = identifier.trim();
     if (!cleanId) {
-      setErrorMessage('Please enter your registered email address or User ID.');
+      setErrorMessage('Please enter your registered email address or ID.');
       return;
     }
 
@@ -146,284 +151,309 @@ function ForgotPasswordContent() {
   const hasEnteredToken = token.trim().length > 0;
   const isPasswordValidLength = newPassword.length >= 8;
   const doPasswordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
+  const hasError = errorMessage.length > 0;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background-full">
-      <div className="w-full max-w-md bg-background-primary-default border border-border-button-default rounded-2xl shadow-lg p-8 space-y-6">
-        {/* Modus Brand Header */}
-        <div className="flex flex-col items-center text-center space-y-2">
-          <div className="size-14 rounded-2xl bg-[#171B18] flex items-center justify-center shadow-sm p-3 border border-border-button-default">
+    <div className="min-h-screen flex flex-col justify-center items-center modus-auth-bg text-text-primary relative p-4 sm:p-6 select-none">
+      {/* Top Right Theme Switcher */}
+      <div className="absolute top-6 right-6 z-20">
+        <ThemeToggle appearance="segmented" size="small" />
+      </div>
+
+      {/* Ambient center lighting */}
+      <div
+        className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
+        aria-hidden="true"
+      >
+        <div className="h-[600px] w-[600px] rounded-full bg-[#A5D632]/8 dark:bg-[#A5D632]/4 blur-[120px]" />
+      </div>
+
+      {/* ── Main Container ── */}
+      <main className="relative z-10 w-full max-w-[420px]">
+        {/* Auth Card */}
+        <div className="bg-background-primary-default dark:bg-[#1A1E1A] rounded-2xl border border-border-button-default dark:border-[#2A3027] shadow-[0_4px_24px_-4px_rgba(23,27,24,0.06),0_1px_3px_rgba(23,27,24,0.03)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] p-8 sm:p-9">
+          {/* Centered Modus Logo */}
+          <div className="flex justify-center mb-6">
             <Image
-              src="/logo.svg"
-              alt="Modus Logo"
-              width={40}
-              height={35}
+              src="/brand/modus-symbol-lime-on-transparent.svg"
+              alt="Modus"
+              width={38}
+              height={34}
               priority
-              className="w-full h-full object-contain"
+              className="w-9 h-8 object-contain"
             />
           </div>
 
-          {step === 'REQUEST_TOKEN' && (
-            <>
-              <h1 className="text-title-2-medium text-text-primary">Forgot Password</h1>
-              <p className="text-body-medium text-text-secondary">
-                Enter your registered email or User ID to receive a one-time verification token.
-              </p>
-            </>
-          )}
-
-          {step === 'RESET_PASSWORD' && (
-            <>
-              <h1 className="text-title-2-medium text-text-primary">Reset Your Password</h1>
-              <p className="text-body-medium text-text-secondary">
-                Paste the verification token from your email to set a new password.
-              </p>
-            </>
-          )}
-
-          {step === 'SUCCESS' && (
-            <>
-              <div className="size-12 rounded-full bg-[#EDF6D7] flex items-center justify-center text-[#252923] mt-2 mb-1">
-                <RiCheckboxCircleLine className="size-8 text-[#8DBA20]" />
-              </div>
-              <h1 className="text-title-2-medium text-text-primary">Password Reset Complete</h1>
-              <p className="text-body-medium text-text-secondary">
-                Your password has been securely updated. You can now log in with your new credentials.
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* Global Error Banner */}
-        {errorMessage && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-caption-1-medium rounded-xl flex items-start gap-2">
-            <RiCloseLine className="size-5 shrink-0 mt-0.5 text-red-600" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* STEP 1: REQUEST TOKEN */}
-        {step === 'REQUEST_TOKEN' && (
-          <form onSubmit={handleRequestToken} className="space-y-4">
-            <Input
-              label="Email or Human ID"
-              placeholder="admin@modus.local or MOD-10001"
-              value={identifier}
-              onChange={(val) => setIdentifier(val)}
-              leadingIcon={RiMailLine}
-              isRequired
-              autoFocus
-            />
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="medium"
-              className="w-full justify-center font-bold"
-              disabled={isSubmitting}
-              trailingIcon={RiArrowRightLine}
-            >
-              {isSubmitting ? 'Sending Token...' : 'Send Reset Token'}
-            </Button>
-
-            <div className="flex items-center justify-between pt-2 border-t border-separator-border">
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-1.5 text-caption-1-medium text-text-secondary hover:text-text-primary hover:underline transition-colors"
-              >
-                <RiArrowLeftLine className="size-4" />
-                Back to Sign In
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setErrorMessage('');
-                  setStep('RESET_PASSWORD');
-                }}
-                className="text-caption-1-medium text-[#73796E] hover:text-text-primary hover:underline transition-colors"
-              >
-                Already have a token?
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* STEP 2: ENTER TOKEN & NEW PASSWORD */}
-        {step === 'RESET_PASSWORD' && (
-          <form onSubmit={handleResetPassword} className="space-y-4">
-            {infoMessage && (
-              <div className="p-3 bg-[#EDF6D7] border border-[#A5D632]/50 text-[#252923] text-caption-1-medium rounded-xl flex items-start gap-2">
-                <RiInformationLine className="size-5 shrink-0 text-[#8DBA20] mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-semibold text-text-primary">Token Dispatched</p>
-                  <p className="text-text-secondary text-[12px] leading-relaxed">
-                    {infoMessage}
-                  </p>
-                </div>
-              </div>
+          {/* Header Text */}
+          <div className="mb-6">
+            {step === 'REQUEST_TOKEN' && (
+              <>
+                <h1 className="text-2xl font-bold tracking-tight text-text-primary">Forgot password</h1>
+                <p className="text-sm text-text-secondary mt-1.5">
+                  Enter your email or ID to receive a verification token.
+                </p>
+              </>
             )}
 
-            {/* Token Input */}
-            <div className="space-y-1">
+            {step === 'RESET_PASSWORD' && (
+              <>
+                <h1 className="text-2xl font-bold tracking-tight text-text-primary">Reset your password</h1>
+                <p className="text-sm text-text-secondary mt-1.5">
+                  Enter the reset token sent to your email and set a new password.
+                </p>
+              </>
+            )}
+
+            {step === 'SUCCESS' && (
+              <div className="text-center">
+                <div className="size-12 rounded-full bg-accent-100 dark:bg-accent-950/60 flex items-center justify-center mx-auto mb-4 border border-accent-300 dark:border-accent-800">
+                  <RiCheckboxCircleLine className="size-7 text-[#8DBA20]" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight text-text-primary">Password reset complete</h1>
+                <p className="text-sm text-text-secondary mt-1.5">
+                  Your password has been securely updated. You can now sign in with your new credentials.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Error Banner */}
+          {hasError && (
+            <div
+              id={errorId}
+              role="alert"
+              aria-live="assertive"
+              className="mb-5 p-3 rounded-xl bg-red-50/90 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-300 text-xs font-medium flex items-start gap-2.5"
+            >
+              <RiErrorWarningLine className="size-4 shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
+          {/* STEP 1: REQUEST TOKEN */}
+          {step === 'REQUEST_TOKEN' && (
+            <form onSubmit={handleRequestToken} noValidate className="space-y-5">
               <Input
+                ref={identifierRef}
+                label="Email or ID"
+                placeholder="admin@modus.local or MOD-10001"
+                value={identifier}
+                onChange={(val) => {
+                  setIdentifier(val);
+                  if (errorMessage) setErrorMessage('');
+                }}
+                fieldClassName={inputFieldStyles}
+                autoFocus
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="medium"
+                disabled={isSubmitting}
+                className="w-full justify-center !h-11 !rounded-xl font-bold cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner size="sm" aria-hidden className="text-[#171B18]" />
+                    <span>Sending token…</span>
+                  </span>
+                ) : (
+                  'Send reset token'
+                )}
+              </Button>
+
+              <div className="flex items-center justify-between pt-1">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 text-caption-1-medium text-text-secondary hover:text-text-primary transition-colors focus:outline-none focus:underline"
+                >
+                  <RiArrowLeftLine className="size-4" />
+                  Back to sign in
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage('');
+                    setStep('RESET_PASSWORD');
+                  }}
+                  className="text-caption-1-medium text-text-secondary hover:text-text-primary hover:underline transition-colors focus:outline-none"
+                >
+                  Already have a token?
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 2: ENTER TOKEN & NEW PASSWORD */}
+          {step === 'RESET_PASSWORD' && (
+            <form onSubmit={handleResetPassword} noValidate className="space-y-5">
+              {infoMessage && (
+                <div className="p-3 bg-accent-100/70 dark:bg-accent-950/40 border border-accent-300 dark:border-accent-800/60 text-accent-950 dark:text-accent-200 text-xs font-medium rounded-xl flex items-start gap-2.5">
+                  <RiInformationLine className="size-4 shrink-0 text-[#8DBA20] mt-0.5" />
+                  <span className="leading-relaxed">{infoMessage}</span>
+                </div>
+              )}
+
+              {/* Reset Token Input */}
+              <Input
+                ref={tokenRef}
                 label="Reset Token"
-                placeholder="Paste the 64-character token from your email"
+                placeholder="Paste the 64-character token"
                 value={token}
                 onChange={(val) => {
                   setToken(val);
                   if (errorMessage) setErrorMessage('');
                 }}
-                leadingIcon={RiKeyLine}
-                isRequired
+                fieldClassName={inputFieldStyles}
                 autoFocus={!urlToken}
               />
-              <p className="text-caption-2-medium text-text-tertiary">
-                The single-use token expires in 15 minutes.
-              </p>
-            </div>
 
-            {/* New Password Options appear once token is provided */}
-            {hasEnteredToken ? (
-              <div className="space-y-4 pt-2 border-t border-separator-border animate-in fade-in duration-200">
-                <div className="relative">
+              {/* New Password fields reveal smoothly when token is entered */}
+              {hasEnteredToken ? (
+                <div className="space-y-4 pt-1 animate-in fade-in duration-200">
                   <Input
                     label="New Password"
                     type={showNewPassword ? 'text' : 'password'}
                     placeholder="Minimum 8 characters"
                     value={newPassword}
-                    onChange={(val) => setNewPassword(val)}
-                    leadingIcon={RiLockPasswordLine}
-                    isRequired
-                    autoFocus
+                    onChange={(val) => {
+                      setNewPassword(val);
+                      if (errorMessage) setErrorMessage('');
+                    }}
+                    fieldClassName={inputFieldStyles}
+                    trailingAddon={
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                        aria-pressed={showNewPassword}
+                        className="size-7 rounded-lg text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8DBA20]"
+                      >
+                        {showNewPassword ? (
+                          <RiEyeOffLine className="size-4" aria-hidden />
+                        ) : (
+                          <RiEyeLine className="size-4" aria-hidden />
+                        )}
+                      </button>
+                    }
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-8 text-text-tertiary hover:text-text-primary p-1"
-                    tabIndex={-1}
-                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showNewPassword ? <RiEyeOffLine className="size-4" /> : <RiEyeLine className="size-4" />}
-                  </button>
-                </div>
 
-                <div className="relative">
                   <Input
                     label="Confirm New Password"
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Re-enter your new password"
                     value={confirmPassword}
-                    onChange={(val) => setConfirmPassword(val)}
-                    leadingIcon={RiLockPasswordLine}
-                    isRequired
+                    onChange={(val) => {
+                      setConfirmPassword(val);
+                      if (errorMessage) setErrorMessage('');
+                    }}
+                    fieldClassName={inputFieldStyles}
+                    trailingAddon={
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                        aria-pressed={showConfirmPassword}
+                        className="size-7 rounded-lg text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8DBA20]"
+                      >
+                        {showConfirmPassword ? (
+                          <RiEyeOffLine className="size-4" aria-hidden />
+                        ) : (
+                          <RiEyeLine className="size-4" aria-hidden />
+                        )}
+                      </button>
+                    }
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-8 text-text-tertiary hover:text-text-primary p-1"
-                    tabIndex={-1}
-                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+
+                  {/* Validation status cues */}
+                  <div className="space-y-1.5 p-3 bg-background-secondary-default dark:bg-[#151915] rounded-xl text-caption-2-medium">
+                    <div className="flex items-center gap-2">
+                      {isPasswordValidLength ? (
+                        <RiCheckLine className="size-4 text-[#8DBA20]" />
+                      ) : (
+                        <span className="size-1.5 rounded-full bg-text-tertiary ml-1 mr-1.5" />
+                      )}
+                      <span className={isPasswordValidLength ? 'text-text-primary font-medium' : 'text-text-tertiary'}>
+                        At least 8 characters
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {doPasswordsMatch ? (
+                        <RiCheckLine className="size-4 text-[#8DBA20]" />
+                      ) : (
+                        <span className="size-1.5 rounded-full bg-text-tertiary ml-1 mr-1.5" />
+                      )}
+                      <span className={doPasswordsMatch ? 'text-text-primary font-medium' : 'text-text-tertiary'}>
+                        Passwords match
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="medium"
+                    disabled={isSubmitting || !isPasswordValidLength || !doPasswordsMatch}
+                    className="w-full justify-center !h-11 !rounded-xl font-bold cursor-pointer"
                   >
-                    {showConfirmPassword ? <RiEyeOffLine className="size-4" /> : <RiEyeLine className="size-4" />}
-                  </button>
-                </div>
-
-                {/* Validation status cues */}
-                <div className="space-y-1.5 p-3 bg-background-secondary rounded-xl text-caption-2-medium">
-                  <div className="flex items-center gap-1.5">
-                    {isPasswordValidLength ? (
-                      <RiCheckLine className="size-4 text-green-600" />
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <Spinner size="sm" aria-hidden className="text-[#171B18]" />
+                        <span>Resetting password…</span>
+                      </span>
                     ) : (
-                      <span className="size-1.5 rounded-full bg-text-tertiary ml-1 mr-1.5" />
+                      'Reset password'
                     )}
-                    <span className={isPasswordValidLength ? 'text-text-primary font-medium' : 'text-text-tertiary'}>
-                      At least 8 characters
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {doPasswordsMatch ? (
-                      <RiCheckLine className="size-4 text-green-600" />
-                    ) : (
-                      <span className="size-1.5 rounded-full bg-text-tertiary ml-1 mr-1.5" />
-                    )}
-                    <span className={doPasswordsMatch ? 'text-text-primary font-medium' : 'text-text-tertiary'}>
-                      Passwords match
-                    </span>
-                  </div>
+                  </Button>
                 </div>
+              ) : (
+                <div className="p-3 bg-background-secondary-default dark:bg-[#151915] border border-dashed border-border-button-default dark:border-[#2C332A] rounded-xl text-center text-xs text-text-secondary">
+                  Paste your reset token above to enter a new password.
+                </div>
+              )}
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="medium"
-                  className="w-full justify-center font-bold"
-                  disabled={isSubmitting || !isPasswordValidLength || !doPasswordsMatch}
-                  trailingIcon={RiArrowRightLine}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage('');
+                    setStep('REQUEST_TOKEN');
+                  }}
+                  className="inline-flex items-center gap-1.5 text-caption-1-medium text-text-secondary hover:text-text-primary hover:underline transition-colors focus:outline-none"
                 >
-                  {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
-                </Button>
-              </div>
-            ) : (
-              <div className="p-3 bg-background-secondary/60 border border-dashed border-border-button-default rounded-xl text-center text-caption-1-medium text-text-tertiary">
-                Paste your reset token above to reveal password entry.
-              </div>
-            )}
+                  <RiMailSendLine className="size-4" />
+                  Change email
+                </button>
 
-            <div className="flex items-center justify-between pt-2 border-t border-separator-border">
-              <button
+                <Link
+                  href="/login"
+                  className="text-caption-1-medium text-text-secondary hover:text-text-primary hover:underline transition-colors focus:outline-none"
+                >
+                  Back to sign in
+                </Link>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 3: SUCCESS */}
+          {step === 'SUCCESS' && (
+            <div className="space-y-4">
+              <Button
                 type="button"
-                onClick={() => {
-                  setErrorMessage('');
-                  setStep('REQUEST_TOKEN');
-                }}
-                className="inline-flex items-center gap-1.5 text-caption-1-medium text-text-secondary hover:text-text-primary hover:underline transition-colors"
+                variant="primary"
+                size="medium"
+                onClick={() => router.replace('/login')}
+                className="w-full justify-center !h-11 !rounded-xl font-bold cursor-pointer"
               >
-                <RiMailSendLine className="size-4" />
-                Resend or change email
-              </button>
-
-              <Link
-                href="/login"
-                className="text-caption-1-medium text-text-secondary hover:text-text-primary hover:underline transition-colors"
-              >
-                Back to Sign In
-              </Link>
+                Proceed to sign in
+              </Button>
             </div>
-          </form>
-        )}
-
-        {/* STEP 3: SUCCESS */}
-        {step === 'SUCCESS' && (
-          <div className="space-y-4">
-            <div className="p-4 bg-[#EDF6D7] border border-[#A5D632]/60 rounded-xl text-caption-1-medium text-[#252923] space-y-2">
-              <div className="flex items-center gap-2 font-semibold">
-                <RiCheckLine className="size-5 text-[#8DBA20]" />
-                <span>Account Ready</span>
-              </div>
-              <p className="text-text-secondary text-[13px] leading-relaxed">
-                Your new password is now active. All previous login sessions have been revoked for your security.
-              </p>
-            </div>
-
-            <Button
-              type="button"
-              variant="primary"
-              size="medium"
-              className="w-full justify-center font-bold"
-              onClick={() => router.replace('/login')}
-              trailingIcon={RiArrowRightLine}
-            >
-              Proceed to Sign In
-            </Button>
-          </div>
-        )}
-
-        <div className="pt-2 text-center border-t border-separator-border text-caption-2-medium text-text-tertiary">
-          Secured with Argon2 password hashing & rotating JWT sessions
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -432,7 +462,7 @@ export default function ForgotPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background-full" />
+        <div className="min-h-screen flex items-center justify-center modus-auth-bg" />
       }
     >
       <ForgotPasswordContent />
