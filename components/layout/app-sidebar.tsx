@@ -312,24 +312,24 @@ export function AppSidebar() {
             <button
               type="button"
               className={cx(
-                'w-full flex items-center rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors',
+                'w-full flex items-center text-body-2-medium text-text-secondary hover:text-text-primary transition-colors group cursor-pointer',
                 collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5'
               )}
               title={collapsed ? 'Help Center' : undefined}
             >
-              <RiQuestionLine className="size-4 shrink-0 text-text-tertiary" />
+              <RiQuestionLine className="size-4 shrink-0 text-text-tertiary group-hover:text-text-primary transition-colors" />
               {!collapsed && <span>Help Center</span>}
             </button>
 
             <button
               type="button"
               className={cx(
-                'w-full flex items-center rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors',
+                'w-full flex items-center text-body-2-medium text-text-secondary hover:text-text-primary transition-colors group cursor-pointer',
                 collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5'
               )}
               title={collapsed ? 'Feedback' : undefined}
             >
-              <RiFeedbackLine className="size-4 shrink-0 text-text-tertiary" />
+              <RiFeedbackLine className="size-4 shrink-0 text-text-tertiary group-hover:text-text-primary transition-colors" />
               {!collapsed && <span>Feedback</span>}
             </button>
 
@@ -337,15 +337,22 @@ export function AppSidebar() {
               <Link
                 href="/settings"
                 className={cx(
-                  'flex items-center rounded-xl text-body-2-medium transition-colors',
+                  'flex items-center text-body-2-medium transition-colors group',
                   collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5',
                   pathname === '/settings'
-                    ? 'bg-accent-100 dark:bg-accent-950 text-accent-950 dark:text-accent-100 font-bold border border-accent-300 dark:border-accent-800 shadow-2xs'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
+                    ? 'text-accent-900 dark:text-accent-300 font-semibold'
+                    : 'text-text-secondary hover:text-text-primary'
                 )}
                 title={collapsed ? 'Settings' : undefined}
               >
-                <RiSettings4Line className={cx('size-4 shrink-0', pathname === '/settings' ? 'text-accent-700 dark:text-accent-300' : 'text-text-tertiary')} />
+                <RiSettings4Line
+                  className={cx(
+                    'size-4 shrink-0 transition-colors',
+                    pathname === '/settings'
+                      ? 'text-accent-700 dark:text-accent-300'
+                      : 'text-text-tertiary group-hover:text-text-primary'
+                  )}
+                />
                 {!collapsed && <span>Settings</span>}
               </Link>
             )}
