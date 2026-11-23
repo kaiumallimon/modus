@@ -266,25 +266,26 @@ export function useThemeMode(): ThemeMode {
 export interface ThemeToggleProps {
   /** Compact icon-only treatment for a collapsed sidebar rail. */
   collapsed?: boolean;
-  /**
-   * Visual treatment for the control.
-   */
+  /** Visual treatment for the control. */
   appearance?: "sidebar" | "segmented" | "sidebar-segmented" | "glass-segmented";
   className?: string;
   /** Size of segmented controls; small fits inside dropdown rows or headers. */
   size?: "small" | "medium";
   /** Circular reveal duration in milliseconds. */
   transitionDuration?: number;
-  /** Header label displayed above the tab control (defaults to "Theme" in sidebar appearance). Set to null or false to hide. */
+  /** Label displayed inline with the pill control (defaults to "Theme" in sidebar appearance). Set to null or false to hide. */
   label?: string | null | false;
 }
 
-/** 3-option theme control: System, Light, and Dark (Pill capsule track with circular indicator). */
+/**
+ * Compact 3-option theme toggle switch (System, Light, Dark).
+ * Renders inline with its label with smooth sliding circle indicator.
+ */
 export function ThemeToggle({
   collapsed = false,
   appearance = "sidebar",
   className,
-  size = "medium",
+  size: _size = "small",
   transitionDuration = THEME_TRANSITION_DURATION,
   label,
 }: ThemeToggleProps) {
@@ -328,7 +329,7 @@ export function ThemeToggle({
           });
         }}
         className={cx(
-          "flex size-9 cursor-pointer items-center justify-center rounded-xl",
+          "flex size-8 cursor-pointer items-center justify-center rounded-xl",
           "border border-border-button-default bg-background-secondary-default",
           "text-foreground-icon-secondary transition-colors duration-150 ease",
           "hover:bg-background-secondary-hover hover:text-foreground-icon-primary shadow-2xs",
@@ -336,21 +337,19 @@ export function ThemeToggle({
           className,
         )}
       >
-        <ActiveIcon className="size-4.5" aria-hidden />
+        <ActiveIcon className="size-4" aria-hidden />
       </button>
     ));
   }
 
   // ── Glass Treatment for Landing Navigation ──
   if (appearance === "glass-segmented") {
-    const small = size === "small";
     return localize((
       <div
         role="radiogroup"
         aria-label="Theme selection"
         className={cx(
-          "relative inline-flex items-center gap-1 rounded-full p-1 z-10 bg-transparent",
-          small && "gap-0.5 p-0.5",
+          "relative inline-flex items-center gap-0.5 rounded-full p-0.5 z-10 bg-transparent",
           className,
         )}
       >
@@ -377,14 +376,13 @@ export function ThemeToggle({
                 });
               }}
               className={cx(
-                "relative z-10 grid size-8 cursor-pointer place-items-center rounded-full outline-none transition-colors duration-150",
-                small && "size-6",
+                "relative z-10 grid size-6 cursor-pointer place-items-center rounded-full outline-none transition-colors duration-150",
                 selected
                   ? "bg-white text-black shadow-xs dark:bg-[#2e2e33] dark:text-white"
                   : "text-black/45 hover:text-black/70 dark:text-white/45 dark:hover:text-white/70",
               )}
             >
-              <Icon className={small ? "size-3.5" : "size-4"} aria-hidden />
+              <Icon className="size-3.5" aria-hidden />
             </button>
           );
         })}
@@ -392,93 +390,23 @@ export function ThemeToggle({
     ));
   }
 
-  // ── Compact Icon-Only Segmented Treatment (e.g. Login Page Header) ──
-  if (appearance === "segmented" && size === "small") {
-    return localize((
-      <div
-        role="radiogroup"
-        aria-label="Theme selection"
-        className={cx(
-          "relative inline-flex items-center gap-0.5 rounded-full p-0.5 bg-background-secondary-default border border-border-button-default shadow-2xs select-none",
-          className,
-        )}
-      >
-        <span
-          aria-hidden
-          className={cx(
-            "pointer-events-none absolute top-0.5 start-0.5 size-7 rounded-full",
-            "bg-background-primary-default border border-border-button-default/70 shadow-xs",
-            mounted && "transition-transform duration-200 ease-out",
-            theme === "system" && "translate-x-0 rtl:translate-x-0",
-            theme === "light" && "translate-x-[30px] rtl:-translate-x-[30px]",
-            theme === "dark" && "translate-x-[60px] rtl:-translate-x-[60px]",
-          )}
-        />
-        {THEME_OPTIONS.map(({ mode, label: optionLabel, Icon }) => {
-          const selected = theme === mode;
-          return (
-            <button
-              key={mode}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              aria-label={`${optionLabel} theme`}
-              title={`${optionLabel} mode`}
-              onClick={(event) => {
-                if (selected) return;
-                const pointerOrigin =
-                  event.clientX === 0 && event.clientY === 0
-                    ? null
-                    : { x: event.clientX, y: event.clientY };
-                void applyThemeWithTransition(mode, {
-                  origin: pointerOrigin,
-                  element: event.currentTarget,
-                  duration: transitionDuration,
-                });
-              }}
-              className={cx(
-                "relative z-10 grid size-7 cursor-pointer place-items-center rounded-full outline-none transition-colors duration-150",
-                "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
-                selected
-                  ? "text-text-primary font-semibold"
-                  : "text-text-tertiary hover:text-text-primary",
-              )}
-            >
-              <Icon className="size-3.5 shrink-0" aria-hidden />
-            </button>
-          );
-        })}
-      </div>
-    ));
-  }
-
-  // ── Standard 3-Option Capsule Pill Track with Sliding Thumb Indicator & Label Above ──
-  const resolvedLabel =
-    label !== undefined
-      ? label
-      : appearance === "sidebar"
-        ? "Theme"
-        : null;
-
+  // ── Compact Pill Track ──
   const pillTrack = (
     <div
       role="radiogroup"
       aria-label="Theme selection"
-      className={cx(
-        "relative inline-flex items-center gap-1 rounded-full p-1 bg-background-secondary-default border border-border-button-default shadow-2xs select-none",
-        !resolvedLabel && className,
-      )}
+      className="relative inline-flex items-center gap-0.5 rounded-full p-0.5 bg-background-secondary-default border border-border-button-default shadow-2xs select-none shrink-0"
     >
-      {/* Sliding Circular Indicator Thumb */}
+      {/* Sliding Circular Indicator Thumb (24px size, 26px step) */}
       <span
         aria-hidden
         className={cx(
-          "pointer-events-none absolute top-1 start-1 size-8 rounded-full",
+          "pointer-events-none absolute top-0.5 start-0.5 size-6 rounded-full",
           "bg-background-primary-default border border-border-button-default/80 shadow-xs",
           mounted && "transition-transform duration-200 ease-out",
           theme === "system" && "translate-x-0 rtl:translate-x-0",
-          theme === "light" && "translate-x-9 rtl:-translate-x-9",
-          theme === "dark" && "translate-x-18 rtl:-translate-x-18",
+          theme === "light" && "translate-x-[26px] rtl:-translate-x-[26px]",
+          theme === "dark" && "translate-x-[52px] rtl:-translate-x-[52px]",
         )}
       />
 
@@ -505,29 +433,35 @@ export function ThemeToggle({
               });
             }}
             className={cx(
-              "relative z-10 grid size-8 cursor-pointer place-items-center rounded-full outline-none transition-colors duration-150",
+              "relative z-10 grid size-6 cursor-pointer place-items-center rounded-full outline-none transition-colors duration-150",
               "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
               selected
                 ? "text-text-primary font-semibold"
                 : "text-text-tertiary hover:text-text-primary",
             )}
           >
-            <Icon className="size-4 shrink-0 transition-colors" aria-hidden />
+            <Icon className="size-3.5 shrink-0 transition-colors" aria-hidden />
           </button>
         );
       })}
     </div>
   );
 
+  // ── Inline Treatment with Label (Default in Sidebar) ──
+  const resolvedLabel =
+    label !== undefined
+      ? label
+      : appearance === "sidebar"
+        ? "Theme"
+        : null;
+
   if (resolvedLabel) {
     return localize((
-      <div className={cx("w-full space-y-1.5", className)}>
-        <span className="px-1 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider block">
+      <div className={cx("flex items-center justify-between w-full px-1 py-0.5", className)}>
+        <span className="text-body-2-medium text-text-secondary select-none font-medium">
           {resolvedLabel}
         </span>
-        <div className="flex items-center justify-center">
-          {pillTrack}
-        </div>
+        {pillTrack}
       </div>
     ));
   }
