@@ -266,3 +266,21 @@ export interface HealthReadyResponse {
     };
   };
 }
+
+export interface ForgotPasswordPayload {
+  identifier: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+

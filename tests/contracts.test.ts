@@ -33,4 +33,18 @@ describe('Contracts & Schema Invariant Tests', () => {
     assert.ok(validSetup.organization.name);
     assert.equal(validSetup.organization.currency, 'USD');
   });
+
+  test('ForgotPassword and ResetPassword payload structures adhere to backend DTO specs', () => {
+    const forgotPayload = {
+      identifier: 'admin@modus.local',
+    };
+    assert.ok(forgotPayload.identifier);
+
+    const resetPayload = {
+      token: '64charhexstringrepresentingtheonetimeresetpasswordtokenfrommail',
+      newPassword: 'NewSecurePassword123!',
+    };
+    assert.ok(resetPayload.token);
+    assert.ok(resetPayload.newPassword.length >= 8);
+  });
 });

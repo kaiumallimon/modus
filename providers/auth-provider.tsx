@@ -124,7 +124,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user && !isPublicRoute) {
       const returnUrl = encodeURIComponent(pathname);
       router.replace(`/login?returnUrl=${returnUrl}`);
-    } else if (user && (pathname === '/login' || pathname === '/setup')) {
+    } else if (
+      user &&
+      (pathname === '/login' ||
+        pathname === '/setup' ||
+        pathname === '/forgot-password' ||
+        pathname === '/reset-password')
+    ) {
       router.replace('/dashboard');
     }
   }, [user, isLoading, isInstallationChecked, pathname, router]);

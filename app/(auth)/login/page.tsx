@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RiLockPasswordLine, RiMailLine, RiEyeLine, RiEyeOffLine, RiArrowRightLine } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/base/buttons/button';
 import { Input } from '@/components/base/input/input';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { toast } from '@/components/base/toast/toast';
+
+const REMEMBER_ME_KEY = 'modus_remember_identifier';
 
 function LoginForm() {
   const router = useRouter();
@@ -18,9 +22,22 @@ function LoginForm() {
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    try {
+      const savedIdentifier = localStorage.getItem(REMEMBER_ME_KEY);
+      if (savedIdentifier) {
+        setIdentifier(savedIdentifier);
+        setRememberMe(true);
+      }
+    } catch {
+      // LocalStorage access may be restricted in private browsing
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +54,17 @@ function LoginForm() {
         identifier: identifier.trim(),
         password: password.trim(),
       });
+
+      try {
+        if (rememberMe) {
+          localStorage.setItem(REMEMBER_ME_KEY, identifier.trim());
+        } else {
+          localStorage.removeItem(REMEMBER_ME_KEY);
+        }
+      } catch {
+        // Silently ignore storage errors
+      }
+
       toast.success('Signed in successfully');
       router.replace(decodeURIComponent(returnUrl));
     } catch (err: any) {
@@ -117,6 +145,22 @@ function LoginForm() {
             >
               {showPassword ? <RiEyeOffLine className="size-4" /> : <RiEyeLine className="size-4" />}
             </button>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <Checkbox
+              isSelected={rememberMe}
+              onChange={(val) => setRememberMe(val)}
+              size="sm"
+            >
+              Remember me
+            </Checkbox>
+            <Link
+              href="/forgot-password"
+              className="text-caption-1-medium text-text-secondary hover:text-text-primary hover:underline transition-colors focus:outline-none focus:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
 
           <Button
