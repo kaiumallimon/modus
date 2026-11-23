@@ -110,21 +110,18 @@ function LoginForm() {
       {/* ── Main Form Container ── */}
       <main className="relative z-10 w-full max-w-[420px]">
         {/* Auth Card */}
-        <div className="relative overflow-hidden bg-background-primary-default dark:bg-[#1A1E1A] rounded-2xl border border-border-button-default dark:border-[#2A3027] shadow-[0_4px_24px_-4px_rgba(23,27,24,0.06),0_1px_3px_rgba(23,27,24,0.03)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] p-8 sm:p-9 before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:bg-gradient-to-r before:from-transparent before:via-[#A5D632] before:to-transparent">
+        <div className="bg-background-primary-default dark:bg-[#1A1E1A] rounded-2xl border border-border-button-default dark:border-[#2A3027] shadow-[0_4px_24px_-4px_rgba(23,27,24,0.06),0_1px_3px_rgba(23,27,24,0.03)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] p-8 sm:p-9">
           
-          {/* Modus Logo Lockup inside Card */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="size-10 rounded-xl bg-[#171B18] dark:bg-[#252923] flex items-center justify-center shadow-xs border border-white/10 p-2">
-              <Image
-                src="/brand/modus-symbol-lime-on-transparent.svg"
-                alt="Modus"
-                width={24}
-                height={22}
-                priority
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-text-primary">Modus</span>
+          {/* Centered Modus Logo without background or text */}
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/brand/modus-symbol-lime-on-transparent.svg"
+              alt="Modus"
+              width={38}
+              height={34}
+              priority
+              className="w-9 h-8 object-contain"
+            />
           </div>
 
           {/* Setup Notice */}
