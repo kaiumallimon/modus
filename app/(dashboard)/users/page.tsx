@@ -546,8 +546,8 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Page Header (No pinned header, clean page-based title) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* 1. Page Header (with border to differentiate) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border-button-default">
         <div>
           <h1 className="text-title-1-medium font-bold text-text-primary tracking-tight">Users</h1>
           <p className="text-body-medium text-text-secondary mt-0.5">
