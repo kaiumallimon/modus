@@ -135,7 +135,11 @@ export default function CdnExplorerPage() {
         },
       });
       setObjects(res.objects || []);
-      setFolders(res.folders || []);
+      if (!currentPrefix) {
+        setFolders(res.folders || []);
+      } else if (res.folders?.length) {
+        setFolders((prev) => Array.from(new Set([...prev, ...res.folders])).sort());
+      }
       setRowSelection({});
     } catch (err: any) {
       toast.error(err.message || 'Failed to list CDN objects');
@@ -315,7 +319,22 @@ export default function CdnExplorerPage() {
       },
       {
         accessorKey: 'folder',
-        header: 'Folder',
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="flex items-center gap-1.5 font-semibold text-text-secondary hover:text-text-primary text-caption-1-medium uppercase tracking-wider"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Folder
+            {column.getIsSorted() === 'asc' ? (
+              <RiArrowUpLine className="size-3.5" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <RiArrowDownLine className="size-3.5" />
+            ) : (
+              <RiArrowUpDownLine className="size-3.5 opacity-40" />
+            )}
+          </button>
+        ),
         cell: ({ row }) => (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption-1-medium bg-background-secondary-default border border-border-button-default text-text-secondary">
             <RiFolder3Line className="size-3 text-text-tertiary" />
@@ -349,7 +368,22 @@ export default function CdnExplorerPage() {
       },
       {
         accessorKey: 'extension',
-        header: 'Format',
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="flex items-center gap-1.5 font-semibold text-text-secondary hover:text-text-primary text-caption-1-medium uppercase tracking-wider"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Format
+            {column.getIsSorted() === 'asc' ? (
+              <RiArrowUpLine className="size-3.5" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <RiArrowDownLine className="size-3.5" />
+            ) : (
+              <RiArrowUpDownLine className="size-3.5 opacity-40" />
+            )}
+          </button>
+        ),
         cell: ({ row }) => {
           const item = row.original;
           const chipColor: ChipColor = item.isImage ? 'lime' : 'blue';
@@ -362,7 +396,22 @@ export default function CdnExplorerPage() {
       },
       {
         accessorKey: 'lastModified',
-        header: 'Modified',
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="flex items-center gap-1.5 font-semibold text-text-secondary hover:text-text-primary text-caption-1-medium uppercase tracking-wider"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Modified
+            {column.getIsSorted() === 'asc' ? (
+              <RiArrowUpLine className="size-3.5" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <RiArrowDownLine className="size-3.5" />
+            ) : (
+              <RiArrowUpDownLine className="size-3.5 opacity-40" />
+            )}
+          </button>
+        ),
         cell: ({ row }) => {
           const val = row.original.lastModified;
           if (!val) return <span className="text-text-tertiary text-caption-1-regular">-</span>;
@@ -661,40 +710,49 @@ export default function CdnExplorerPage() {
               type="button"
               onClick={() => setCurrentPrefix('')}
               className={cx(
-                'px-2.5 py-1 rounded-lg text-caption-1-medium transition-colors flex items-center gap-1',
+                'px-3 py-1.5 rounded-xl text-caption-1-medium transition-colors flex items-center gap-1.5 cursor-pointer',
                 currentPrefix === ''
-                  ? 'bg-background-primary-default shadow-2xs text-text-primary font-bold'
-                  : 'text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default'
+                  ? 'bg-background-primary-default shadow-2xs text-text-primary font-bold border border-border-button-default'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
               )}
             >
-              <RiFolderCloudLine className="size-3.5" />
-              Root
+              <RiFolderCloudLine className="size-3.5 text-accent-600" />
+              <span>All Files</span>
+              <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-background-secondary-default font-mono text-text-secondary">
+                {objects.length}
+              </span>
             </button>
 
             {/* Subfolders Chips */}
             {folders.map((f) => {
               const cleanFolder = f.replace(/\/$/, '');
               const isSelected = currentPrefix === cleanFolder || currentPrefix === f;
+              const countInFolder = objects.filter((o) => o.folder === f || o.key.startsWith(f)).length;
               return (
                 <button
                   key={f}
                   type="button"
                   onClick={() => setCurrentPrefix(cleanFolder)}
                   className={cx(
-                    'px-2.5 py-1 rounded-lg text-caption-1-medium transition-colors flex items-center gap-1',
+                    'px-3 py-1.5 rounded-xl text-caption-1-medium transition-colors flex items-center gap-1.5 cursor-pointer',
                     isSelected
-                      ? 'bg-background-primary-default shadow-2xs text-text-primary font-bold'
+                      ? 'bg-background-primary-default shadow-2xs text-text-primary font-bold border border-border-button-default'
                       : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
                   )}
                 >
                   <RiFolder3Line className="size-3.5 text-accent-600" />
-                  {cleanFolder}
+                  <span>{cleanFolder}</span>
+                  {countInFolder > 0 && (
+                    <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-background-secondary-default font-mono text-text-secondary">
+                      {countInFolder}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* Right Toolbar: Search, Format Filter, Layout Switcher */}
+          {/* Right Toolbar: Search, Format Filter, Sort, Layout Switcher */}
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* Search Input */}
             <div className="w-56">
@@ -721,6 +779,98 @@ export default function CdnExplorerPage() {
               <SelectItem id="media" textValue="Media">Media</SelectItem>
               <SelectItem id="data" textValue="Data/Code">Data/Code</SelectItem>
             </Select>
+
+            {/* Sort Popover Button */}
+            <AriaDialogTrigger>
+              <AriaButton
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-button-default bg-background-primary-default text-body-2-medium text-text-secondary hover:bg-background-secondary-default transition-colors shadow-2xs cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+              >
+                <RiArrowUpDownLine className="size-4 text-text-tertiary" />
+                <span>Sort</span>
+              </AriaButton>
+              <AriaPopover
+                placement="bottom end"
+                offset={8}
+                className="z-50 w-52 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-xl outline-none"
+              >
+                <AriaDialog className="outline-none flex flex-col gap-0.5">
+                  {({ close }) => (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSorting([{ id: 'lastModified', desc: true }]);
+                          close();
+                        }}
+                        className="w-full text-start px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+                      >
+                        Sort by Newest
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSorting([{ id: 'lastModified', desc: false }]);
+                          close();
+                        }}
+                        className="w-full text-start px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+                      >
+                        Sort by Oldest
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSorting([{ id: 'name', desc: false }]);
+                          close();
+                        }}
+                        className="w-full text-start px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+                      >
+                        Sort by Name (A-Z)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSorting([{ id: 'name', desc: true }]);
+                          close();
+                        }}
+                        className="w-full text-start px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+                      >
+                        Sort by Name (Z-A)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSorting([{ id: 'size', desc: true }]);
+                          close();
+                        }}
+                        className="w-full text-start px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+                      >
+                        Sort by Size (Largest)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSorting([{ id: 'size', desc: false }]);
+                          close();
+                        }}
+                        className="w-full text-start px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+                      >
+                        Sort by Size (Smallest)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSorting([{ id: 'extension', desc: false }]);
+                          close();
+                        }}
+                        className="w-full text-start px-2.5 py-1.5 rounded-lg text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+                      >
+                        Sort by Format
+                      </button>
+                    </>
+                  )}
+                </AriaDialog>
+              </AriaPopover>
+            </AriaDialogTrigger>
 
             {/* View Mode Toggle */}
             <div className="flex items-center p-0.5 rounded-lg border border-border-button-default bg-background-primary-default shadow-2xs">
@@ -853,10 +1003,11 @@ export default function CdnExplorerPage() {
             </table>
           </div>
         ) : (
-          /* Grid View */
+          /* Grid View (Synchronized with active table sorting, filters, and row selection) */
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filteredObjects.map((item) => {
-              const isSelected = rowSelection[item.key];
+            {table.getRowModel().rows.map((row) => {
+              const item = row.original;
+              const isSelected = row.getIsSelected();
               return (
                 <div
                   key={item.key}
@@ -894,7 +1045,7 @@ export default function CdnExplorerPage() {
                       <Checkbox
                         isSelected={isSelected}
                         onChange={(checked) => {
-                          setRowSelection((prev) => ({ ...prev, [item.key]: checked }));
+                          row.toggleSelected(checked);
                         }}
                         aria-label={`Select ${item.name}`}
                       />
