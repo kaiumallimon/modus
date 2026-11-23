@@ -15,7 +15,7 @@ export function AppShell({ children }: AppShellProps) {
       <AppSidebar />
       <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-background-primary-default">
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-[1700px] mx-auto space-y-6">
+          <div className="w-full space-y-6">
             {children}
           </div>
         </main>

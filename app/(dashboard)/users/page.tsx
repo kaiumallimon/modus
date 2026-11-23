@@ -546,25 +546,27 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Page Header (with border to differentiate) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border-button-default">
-        <div>
-          <h1 className="text-title-1-medium font-bold text-text-primary tracking-tight">Users</h1>
-          <p className="text-body-medium text-text-secondary mt-0.5">
-            Directory of team members, roles, credentials, and access statuses
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5">
-          {hasPermission('users.create') && (
-            <Button
-              variant="primary"
-              onClick={handleOpenCreate}
-              leadingIcon={RiUserAddLine}
-              className="font-semibold"
-            >
-              Add New User
-            </Button>
-          )}
+      {/* 1. Page Header (Full-width border with 0 side margins) */}
+      <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 py-5 border-b border-border-button-default bg-background-primary-default">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-title-1-medium font-bold text-text-primary tracking-tight">Users</h1>
+            <p className="text-body-medium text-text-secondary mt-0.5">
+              Directory of team members, roles, credentials, and access statuses
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            {hasPermission('users.create') && (
+              <Button
+                variant="primary"
+                onClick={handleOpenCreate}
+                leadingIcon={RiUserAddLine}
+                className="font-semibold"
+              >
+                Add New User
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
