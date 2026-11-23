@@ -7,10 +7,8 @@ import {
   RiShareForwardLine,
   RiNotification3Line,
   RiUserAddLine,
-  RiShieldCheckLine,
+  RiLayoutGridLine,
 } from '@remixicon/react';
-import { useAuth } from '@/providers/auth-provider';
-import { Chip } from '@/components/base/badges/chip';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { ThemeToggle } from '@/components/application/theme/theme-toggle';
 
@@ -21,17 +19,12 @@ interface BreadcrumbItem {
 
 export function AppHeader({ title, breadcrumbs = [] }: { title?: string; breadcrumbs?: BreadcrumbItem[] }) {
   const pathname = usePathname();
-  const { user } = useAuth();
-
-  // On the dashboard, the greeting banner provides the header
-  if (pathname === '/dashboard') {
-    return null;
-  }
 
   // Auto-generate breadcrumbs if not explicitly provided
+  const pageTitle = title || (pathname === '/dashboard' ? 'Dashboard' : pathname.replace('/', '').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
   const generatedBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : [
     { label: 'Modus', href: '/dashboard' },
-    { label: title || pathname.replace('/', '').replace(/-/g, ' ').toUpperCase() },
+    { label: pageTitle },
   ];
 
   return (
@@ -55,15 +48,15 @@ export function AppHeader({ title, breadcrumbs = [] }: { title?: string; breadcr
             );
           })}
         </nav>
-        {title && <h1 className="text-title-3-semibold text-text-primary leading-tight mt-0.5 truncate">{title}</h1>}
+        <h1 className="text-title-2-medium font-bold text-text-primary leading-tight mt-0.5 truncate">{pageTitle}</h1>
       </div>
 
       {/* Header Actions matching reference design */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Share Button */}
         <button
           type="button"
-          className="size-9 rounded-xl border border-border-button-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors"
+          className="size-9 rounded-lg border border-border-button-default bg-background-primary-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors shadow-2xs"
           title="Share"
           aria-label="Share workspace"
         >
@@ -73,7 +66,7 @@ export function AppHeader({ title, breadcrumbs = [] }: { title?: string; breadcr
         {/* Notifications Button with unread indicator */}
         <button
           type="button"
-          className="relative size-9 rounded-xl border border-border-button-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors"
+          className="relative size-9 rounded-lg border border-border-button-default bg-background-primary-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors shadow-2xs"
           title="Notifications"
           aria-label="Notifications"
         >
@@ -100,22 +93,18 @@ export function AppHeader({ title, breadcrumbs = [] }: { title?: string; breadcr
         </div>
 
         {/* Theme Toggle */}
-        <div className="border-l border-separator-border ps-3">
+        <div className="border-l border-separator-border ps-2.5">
           <ThemeToggle collapsed />
         </div>
 
-        {/* User Identity Chip */}
-        {user?.role && (
-          <div className="hidden md:flex items-center gap-2 border-l border-separator-border ps-3">
-            <Chip color="lime" variant="caption" className="capitalize font-medium">
-              <RiShieldCheckLine className="size-3.5 me-1 inline text-accent-700 dark:text-accent-400" />
-              {String(user.role).replace('_', ' ')}
-            </Chip>
-            <span className="text-caption-2-medium text-text-tertiary">
-              <span className="font-mono text-text-secondary font-semibold">{user?.humanId || 'MOD-USER'}</span>
-            </span>
-          </div>
-        )}
+        {/* Customize Widget Button */}
+        <button
+          type="button"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-button-default bg-background-primary-default hover:bg-background-secondary-default text-body-2-medium text-text-primary font-medium transition-colors shadow-2xs"
+        >
+          <RiLayoutGridLine className="size-4 text-text-secondary" />
+          <span>Customize Widget</span>
+        </button>
       </div>
     </header>
   );
