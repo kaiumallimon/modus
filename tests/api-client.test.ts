@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { ApiError } from '../lib/api/errors';
 import { API_ENDPOINTS } from '../lib/api/endpoints';
+import { isTokenExpired } from '../lib/api/client';
 
 describe('API Client & Error Classification Tests', () => {
   test('ApiError correctly classifies HTTP 401 Unauthorized', () => {
@@ -51,5 +52,29 @@ describe('API Client & Error Classification Tests', () => {
     assert.equal(API_ENDPOINTS.MODULE_BY_ID('users'), '/modules/users');
     assert.equal(API_ENDPOINTS.MODULE_ACTIVATION('users'), '/modules/users/activation');
     assert.equal(API_ENDPOINTS.AUDIT_LOG_BY_ID('log-1'), '/audit-logs/log-1');
+  });
+
+  test('isTokenExpired correctly detects expired and active JWTs', () => {
+    // Generate valid base64 payload for test
+    const createMockJwt = (expSeconds: number) => {
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const payload = Buffer.from(JSON.stringify({ sub: 'user-1', exp: expSeconds })).toString('base64url');
+      return `${header}.${payload}.mock-signature`;
+    };
+
+    const pastEpoch = Math.floor(Date.now() / 1000) - 300; // 5 min ago
+    const futureEpoch = Math.floor(Date.now() / 1000) + 3600; // 1 hour future
+    const nearEpoch = Math.floor(Date.now() / 1000) + 15; // 15s future (within 30s threshold)
+
+    const expiredJwt = createMockJwt(pastEpoch);
+    const validJwt = createMockJwt(futureEpoch);
+    const nearJwt = createMockJwt(nearEpoch);
+
+    assert.equal(isTokenExpired(expiredJwt, 0), true);
+    assert.equal(isTokenExpired(validJwt, 30), false);
+    // 15s remaining is within 30s offset threshold, so should be classified as expiring/expired
+    assert.equal(isTokenExpired(nearJwt, 30), true);
+    assert.equal(isTokenExpired(null), true);
+    assert.equal(isTokenExpired('malformed-token'), true);
   });
 });

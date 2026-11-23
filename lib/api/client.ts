@@ -14,25 +14,87 @@ export interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
 }
 
-// In-memory token store for security
+export const STORAGE_KEYS = {
+  AUTH_TOKEN: 'modus_auth_token',
+  REFRESH_TOKEN: 'modus_refresh_token',
+  REMEMBER_ME: 'modus_remember_me',
+} as const;
+
+// In-memory token store for security and fast access
 let activeAccessToken: string | null = null;
 let activeRefreshToken: string | null = null;
 
-// Allow token sync with storage handler
-export function setAuthTokens(tokens: { accessToken: string; refreshToken: string } | null) {
+// Synchronized in-flight refresh promise to deduplicate concurrent refresh calls
+let refreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Checks if a JWT token is expired or within `offsetSeconds` of expiring.
+ */
+export function isTokenExpired(token: string | null | undefined, offsetSeconds: number = 30): boolean {
+  if (!token) return true;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const { exp } = JSON.parse(jsonPayload);
+    if (!exp) return false;
+    // Expired if current epoch is >= (exp - offset) in milliseconds
+    return Date.now() >= (exp * 1000) - (offsetSeconds * 1000);
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Persists or clears auth tokens based on the rememberMe preference.
+ * - rememberMe = true: stored in localStorage (persists across browser restarts).
+ * - rememberMe = false: stored in sessionStorage (cleared on browser/tab close).
+ */
+export function setAuthTokens(
+  tokens: { accessToken: string; refreshToken: string } | null,
+  rememberMe?: boolean
+) {
   if (!tokens) {
     activeAccessToken = null;
     activeRefreshToken = null;
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('modus_auth_token');
-      sessionStorage.removeItem('modus_refresh_token');
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
     }
   } else {
     activeAccessToken = tokens.accessToken;
     activeRefreshToken = tokens.refreshToken;
+
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('modus_auth_token', tokens.accessToken);
-      sessionStorage.setItem('modus_refresh_token', tokens.refreshToken);
+      const isRemembered =
+        rememberMe !== undefined
+          ? rememberMe
+          : localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true';
+
+      if (isRemembered) {
+        localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokens.accessToken);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+        // Also mirror into sessionStorage for immediate active tab access
+        sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokens.accessToken);
+        sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
+        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokens.accessToken);
+        sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+      }
     }
   }
 }
@@ -40,7 +102,9 @@ export function setAuthTokens(tokens: { accessToken: string; refreshToken: strin
 export function getAccessToken(): string | null {
   if (activeAccessToken) return activeAccessToken;
   if (typeof window !== 'undefined') {
-    activeAccessToken = sessionStorage.getItem('modus_auth_token');
+    activeAccessToken =
+      sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+      localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   }
   return activeAccessToken;
 }
@@ -48,56 +112,80 @@ export function getAccessToken(): string | null {
 export function getRefreshToken(): string | null {
   if (activeRefreshToken) return activeRefreshToken;
   if (typeof window !== 'undefined') {
-    activeRefreshToken = sessionStorage.getItem('modus_refresh_token');
+    activeRefreshToken =
+      sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) ||
+      localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
   return activeRefreshToken;
 }
 
-let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
-
-function subscribeTokenRefresh(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
+export function isRememberMeActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true';
 }
 
-function onRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
-  refreshSubscribers = [];
-}
+/**
+ * Refreshes the access token using the stored refresh token.
+ * Deduplicates in-flight calls so multiple parallel requests share a single refresh network call.
+ */
+export async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const currentRefresh = getRefreshToken();
-  if (!currentRefresh) return null;
-
-  try {
-    const res = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken: currentRefresh }),
-    });
-
-    if (!res.ok) {
+  refreshPromise = (async () => {
+    const currentRefresh = getRefreshToken();
+    if (!currentRefresh) {
       setAuthTokens(null);
       return null;
     }
 
-    const data = await res.json();
-    if (data.accessToken && data.refreshToken) {
-      setAuthTokens({
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-      });
-      return data.accessToken;
+    // If the refresh token itself is already expired, logout immediately
+    if (isTokenExpired(currentRefresh, 0)) {
+      setAuthTokens(null);
+      return null;
     }
-    return null;
-  } catch {
-    setAuthTokens(null);
-    return null;
-  }
+
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: currentRefresh }),
+      });
+
+      if (!res.ok) {
+        // Only wipe tokens if the refresh token is truly expired or invalid (401/403)
+        if (res.status === 401 || res.status === 403) {
+          setAuthTokens(null);
+        }
+        return null;
+      }
+
+      const data = await res.json();
+      if (data.accessToken && data.refreshToken) {
+        setAuthTokens({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        });
+        return data.accessToken;
+      }
+      return null;
+    } catch {
+      // Network hiccup: do not wipe tokens, allow subsequent retries
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
+/**
+ * Universal API client with pre-flight proactive refresh and reactive 401 token retry.
+ */
 export async function apiClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '');
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -125,7 +213,22 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
   };
 
   if (!options.skipAuth) {
-    const token = getAccessToken();
+    let token = getAccessToken();
+    const refreshToken = getRefreshToken();
+
+    // Proactively refresh if access token is expired or within 30s of expiration
+    if (token && isTokenExpired(token, 30) && refreshToken) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        token = refreshed;
+      }
+    } else if (!token && refreshToken) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        token = refreshed;
+      }
+    }
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -146,30 +249,13 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
     );
   }
 
-  // Handle 401 token refresh retry
+  // Handle 401 token refresh retry if not caught by pre-flight
   if (response.status === 401 && !options.skipAuth && getRefreshToken()) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-      const newToken = await refreshAccessToken();
-      isRefreshing = false;
-      if (newToken) {
-        onRefreshed(newToken);
-        headers['Authorization'] = `Bearer ${newToken}`;
-        const retryRes = await fetch(url, { ...config, headers });
-        return handleResponse<T>(retryRes);
-      }
-    } else {
-      return new Promise<T>((resolve, reject) => {
-        subscribeTokenRefresh(async (newToken) => {
-          try {
-            headers['Authorization'] = `Bearer ${newToken}`;
-            const retryRes = await fetch(url, { ...config, headers });
-            resolve(await handleResponse<T>(retryRes));
-          } catch (e) {
-            reject(e);
-          }
-        });
-      });
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`;
+      const retryRes = await fetch(url, { ...config, headers });
+      return handleResponse<T>(retryRes);
     }
   }
 

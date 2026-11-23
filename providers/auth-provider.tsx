@@ -2,7 +2,15 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { apiClient, setAuthTokens, getAccessToken } from '@/lib/api/client';
+import {
+  apiClient,
+  setAuthTokens,
+  getAccessToken,
+  getRefreshToken,
+  refreshAccessToken,
+  isTokenExpired,
+} from '@/lib/api/client';
+import { ApiError } from '@/lib/api/errors';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import {
   User,
@@ -29,7 +37,7 @@ interface AuthContextType {
   setupRequired: boolean;
   isSuperAdmin: boolean;
   isAdmin: boolean;
-  login: (payload: LoginPayload) => Promise<void>;
+  login: (payload: LoginPayload, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -66,12 +74,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) {
+    let token = getAccessToken();
+    const refresh = getRefreshToken();
+
+    // If both access token and refresh token are missing, user is unauthenticated
+    if (!token && !refresh) {
       setUser(null);
       setPermissions([]);
       setIsLoading(false);
       return;
+    }
+
+    // If access token is missing or expired, proactively utilize the refresh token
+    if ((!token || isTokenExpired(token)) && refresh) {
+      token = await refreshAccessToken();
+      if (!token) {
+        setUser(null);
+        setPermissions([]);
+        setIsLoading(false);
+        return;
+      }
     }
 
     try {
@@ -83,10 +105,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         await fetchRolePermissions(String(profile.role));
       }
-    } catch {
-      setAuthTokens(null);
-      setUser(null);
-      setPermissions([]);
+    } catch (err: any) {
+      // Only clear user credentials if the request was definitively rejected (401 / 403)
+      if (err instanceof ApiError && (err.isUnauthorized || err.isForbidden)) {
+        setAuthTokens(null);
+        setUser(null);
+        setPermissions([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -124,6 +149,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkInstallation();
   }, [pathname, refreshProfile, router]);
 
+  // Background silent refresh: keeps access token fresh while active
+  useEffect(() => {
+    if (!user) return;
+
+    // Check every 60 seconds; if token expires within 2 minutes, silently rotate it
+    const interval = setInterval(async () => {
+      const token = getAccessToken();
+      const refresh = getRefreshToken();
+      if (token && isTokenExpired(token, 120) && refresh) {
+        await refreshAccessToken();
+      }
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Route protection
   useEffect(() => {
     if (!isInstallationChecked || isLoading) return;
@@ -148,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, isInstallationChecked, pathname, router]);
 
-  const login = async (payload: LoginPayload) => {
+  const login = async (payload: LoginPayload, rememberMe: boolean = false) => {
     setIsLoading(true);
     try {
       const res = await apiClient<LoginResponse>(API_ENDPOINTS.AUTH_LOGIN, {
@@ -157,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         skipAuth: true,
       });
 
-      setAuthTokens(res.tokens);
+      setAuthTokens(res.tokens, rememberMe);
       setUser(res.user);
 
       if (res.user.role === 'SUPER_ADMIN' || res.user.role === Role.SUPER_ADMIN) {

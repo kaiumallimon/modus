@@ -64,10 +64,13 @@ function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      await login({
-        identifier: identifier.trim(),
-        password: password.trim(),
-      });
+      await login(
+        {
+          identifier: identifier.trim(),
+          password: password.trim(),
+        },
+        rememberMe
+      );
 
       try {
         if (rememberMe) {
