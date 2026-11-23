@@ -568,67 +568,79 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* 2. Stats Cards Row (with Show Statistics toggle) */}
+      {/* 2. Stats Section (Single unified segmented card container) */}
       {showStatistics && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-200">
-          {/* Total Users */}
-          <div className="bg-background-primary-default border border-border-button-default rounded-2xl p-4.5 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-caption-1-medium text-text-tertiary">
-              <span className="font-medium">Total Users</span>
-              <RiInformationLine className="size-4 text-text-tertiary opacity-70" />
-            </div>
-            <div className="mt-2.5">
-              <span className="text-title-1-medium font-bold text-text-primary">{total}</span>
-              <div className="flex items-center gap-1.5 mt-1 text-caption-1-regular text-text-tertiary">
-                <span className="text-accent-700 dark:text-accent-300 font-medium">+100% platform</span>
-                <span>registered</span>
+        <div className="rounded-2xl border border-border-button-default bg-background-primary-default shadow-2xs overflow-hidden animate-in fade-in duration-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-separator-border">
+            {/* Total Users */}
+            <div className="p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-caption-1-medium text-text-primary font-medium">
+                <span>Total Users</span>
+                <RiInformationLine className="size-3.5 text-text-tertiary" />
               </div>
-            </div>
-          </div>
-
-          {/* Active Accounts */}
-          <div className="bg-background-primary-default border border-border-button-default rounded-2xl p-4.5 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-caption-1-medium text-text-tertiary">
-              <span className="font-medium">Active Accounts</span>
-              <RiInformationLine className="size-4 text-text-tertiary opacity-70" />
-            </div>
-            <div className="mt-2.5">
-              <span className="text-title-1-medium font-bold text-text-primary">{activeCount}</span>
-              <div className="flex items-center gap-1.5 mt-1 text-caption-1-regular text-text-tertiary">
-                <span className="text-accent-700 dark:text-accent-300 font-medium">
-                  {users.length > 0 ? `${Math.round((activeCount / users.length) * 100)}%` : '100%'}
+              <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight">
+                {total}
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
+                <span>vs last month</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
+                  + {users.length > 0 ? users.length : 1} users
                 </span>
-                <span>operational</span>
               </div>
             </div>
-          </div>
 
-          {/* Administrators */}
-          <div className="bg-background-primary-default border border-border-button-default rounded-2xl p-4.5 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-caption-1-medium text-text-tertiary">
-              <span className="font-medium">Administrators</span>
-              <RiInformationLine className="size-4 text-text-tertiary opacity-70" />
-            </div>
-            <div className="mt-2.5">
-              <span className="text-title-1-medium font-bold text-text-primary">{adminCount}</span>
-              <div className="flex items-center gap-1.5 mt-1 text-caption-1-regular text-text-tertiary">
-                <span className="text-blue-600 dark:text-blue-400 font-medium">Super & Admin</span>
-                <span>privileges</span>
+            {/* Active Accounts */}
+            <div className="p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-caption-1-medium text-text-primary font-medium">
+                <span>Active Accounts</span>
+                <RiInformationLine className="size-3.5 text-text-tertiary" />
+              </div>
+              <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight">
+                {activeCount}
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
+                <span>vs last month</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
+                  ↑ {users.length > 0 ? Math.round((activeCount / users.length) * 100) : 100}%
+                </span>
               </div>
             </div>
-          </div>
 
-          {/* Inactive / Pending */}
-          <div className="bg-background-primary-default border border-border-button-default rounded-2xl p-4.5 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-caption-1-medium text-text-tertiary">
-              <span className="font-medium">Inactive / Suspended</span>
-              <RiInformationLine className="size-4 text-text-tertiary opacity-70" />
+            {/* Administrators */}
+            <div className="p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-caption-1-medium text-text-primary font-medium">
+                <span>Administrators</span>
+                <RiInformationLine className="size-3.5 text-text-tertiary" />
+              </div>
+              <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight">
+                {adminCount}
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
+                <span>vs last month</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-accent-800 dark:text-accent-300 bg-accent-100 dark:bg-accent-950/60">
+                  ↑ {adminCount > 0 ? `${adminCount} active` : '0 active'}
+                </span>
+              </div>
             </div>
-            <div className="mt-2.5">
-              <span className="text-title-1-medium font-bold text-text-primary">{inactiveCount}</span>
-              <div className="flex items-center gap-1.5 mt-1 text-caption-1-regular text-text-tertiary">
-                <span className={inactiveCount > 0 ? "text-rose-600 font-medium" : "text-text-tertiary font-medium"}>
-                  {inactiveCount > 0 ? "Action required" : "Zero suspended"}
+
+            {/* Inactive / Suspended */}
+            <div className="p-5 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-caption-1-medium text-text-primary font-medium">
+                <span>Inactive Accounts</span>
+                <RiInformationLine className="size-3.5 text-text-tertiary" />
+              </div>
+              <div className="mt-2 text-title-1-medium font-bold text-text-primary tracking-tight">
+                {inactiveCount}
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-caption-2-medium text-text-tertiary">
+                <span>vs last month</span>
+                <span className={cx(
+                  "inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold",
+                  inactiveCount > 0
+                    ? "text-rose-800 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/60"
+                    : "text-text-tertiary bg-background-secondary-default"
+                )}>
+                  {inactiveCount > 0 ? `+${inactiveCount} flagged` : '0 suspended'}
                 </span>
               </div>
             </div>
