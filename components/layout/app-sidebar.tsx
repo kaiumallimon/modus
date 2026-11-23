@@ -26,7 +26,6 @@ import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import { ModuleRegistration } from '@/lib/api/types';
 import { cx } from '@/utils/cx';
 import { Avatar } from '@/components/base/avatar/avatar';
-import { Counter } from '@/components/base/badges/counter';
 import { Kbd } from '@/components/base/kbd/kbd';
 import { AlertDialog } from '@/components/base/modal/modal';
 
@@ -89,7 +88,6 @@ export function AppSidebar() {
     async function loadBackendData() {
       if (!user) return;
 
-      // Load active modules if permitted
       if (hasPermission('modules.read')) {
         try {
           const modules = await apiClient<ModuleRegistration[]>(API_ENDPOINTS.MODULES);
@@ -100,7 +98,6 @@ export function AppSidebar() {
         }
       }
 
-      // Load audit log count if permitted
       if (hasPermission('audit.read')) {
         try {
           const res = await apiClient<{ meta?: { total?: number } }>(API_ENDPOINTS.AUDIT_LOGS, {
@@ -131,20 +128,19 @@ export function AppSidebar() {
     <>
       <aside
         className={cx(
-          'relative flex flex-col bg-background-primary-default border-r border-border-button-default transition-all duration-300 ease-in-out shrink-0 z-30 select-none shadow-xs h-full overflow-hidden',
+          'relative flex flex-col bg-[#171B18] text-white transition-all duration-300 ease-in-out shrink-0 z-30 select-none shadow-xl border border-white/5 my-3 ms-3 rounded-[26px] overflow-hidden',
           collapsed ? 'w-18' : 'w-64'
         )}
       >
-        {/* Workspace / Org Header with bgless logo */}
+        {/* Workspace Brand Header */}
         {collapsed ? (
-          <div className="flex items-center justify-center h-16 border-b border-separator-border px-2 shrink-0">
+          <div className="flex items-center justify-center h-16 border-b border-white/10 px-2 shrink-0">
             <button
               onClick={() => setCollapsed(false)}
-              className="group relative size-10 rounded-xl flex items-center justify-center hover:bg-background-secondary-default transition-all duration-150"
+              className="group relative size-10 rounded-xl flex items-center justify-center hover:bg-white/10 transition-all duration-150"
               title="Expand sidebar"
               aria-label="Expand sidebar"
             >
-              {/* Bgless logo shown normally */}
               <div className="size-6 flex items-center justify-center transition-all duration-150 group-hover:opacity-0 group-hover:scale-75">
                 <Image
                   src="/logo.svg"
@@ -155,14 +151,13 @@ export function AppSidebar() {
                   className="w-full h-full object-contain"
                 />
               </div>
-              {/* Expand icon revealed on hover */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 text-text-primary">
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 text-white">
                 <RiArrowRightSLine className="size-5" />
               </div>
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between h-16 px-4 border-b border-separator-border shrink-0">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-white/10 shrink-0">
             <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden min-w-0">
               <div className="size-7 flex items-center justify-center shrink-0">
                 <Image
@@ -174,13 +169,13 @@ export function AppSidebar() {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span className="font-bold text-text-primary text-title-3-semibold tracking-tight truncate">
+              <span className="font-bold text-white text-title-3-semibold tracking-tight truncate">
                 Modus
               </span>
             </Link>
             <button
               onClick={() => setCollapsed(true)}
-              className="p-1 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0"
+              className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
               title="Collapse sidebar"
               aria-label="Collapse sidebar"
             >
@@ -189,13 +184,13 @@ export function AppSidebar() {
           </div>
         )}
 
-        {/* Quick Search Bar (icon only when collapsed) */}
+        {/* Quick Search Bar */}
         <div className="px-3 pt-3 pb-1 shrink-0">
           {collapsed ? (
             <div className="flex justify-center">
               <button
                 onClick={() => setCollapsed(false)}
-                className="size-9 rounded-xl bg-background-secondary-default border border-border-button-default flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover transition-colors"
+                className="size-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
                 title="Search (⌘K)"
                 aria-label="Search"
               >
@@ -204,28 +199,27 @@ export function AppSidebar() {
             </div>
           ) : (
             <div className="relative flex items-center">
-              <RiSearchLine className="absolute start-2.5 size-4 text-text-tertiary pointer-events-none" />
+              <RiSearchLine className="absolute start-2.5 size-4 text-neutral-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 ps-8 pe-12 rounded-xl bg-background-secondary-default border border-border-button-default text-body-2-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                className="w-full h-9 ps-8 pe-12 rounded-xl bg-white/5 border border-white/10 text-body-2-medium text-white placeholder:text-neutral-500 outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
               />
               <div className="absolute end-2 flex items-center pointer-events-none">
-                <Kbd>⌘K</Kbd>
+                <Kbd className="bg-white/10 text-neutral-300">⌘K</Kbd>
               </div>
             </div>
           )}
         </div>
 
-        {/* Nav List - SCROLLABLE AREA */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5 min-h-0">
-          {/* CORE PLATFORM FEATURES */}
+        {/* Nav List - Scrollable */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 min-h-0">
           <div>
             {!collapsed && (
-              <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                Platform Navigation
+              <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                Menu
               </p>
             )}
             <nav className="space-y-1">
@@ -239,11 +233,11 @@ export function AppSidebar() {
                     key={item.label}
                     href={item.href}
                     className={cx(
-                      'relative flex items-center justify-between rounded-xl transition-all duration-150',
-                      collapsed ? 'size-10 justify-center mx-auto' : 'px-2.5 py-2 text-body-medium',
+                      'relative flex items-center justify-between rounded-2xl transition-all duration-150',
+                      collapsed ? 'size-10 justify-center mx-auto' : 'px-3 py-2 text-body-medium',
                       isActive
-                        ? 'bg-accent-100 dark:bg-accent-950 text-accent-950 dark:text-accent-100 font-bold border border-accent-300 dark:border-accent-800 shadow-2xs before:absolute before:inset-y-1.5 before:start-0 before:w-1.5 before:rounded-e-full before:bg-accent-600 dark:before:bg-accent-400'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default font-medium'
+                        ? 'bg-accent-500 text-[#171B18] font-bold shadow-md'
+                        : 'text-neutral-400 hover:text-white hover:bg-white/10 font-medium'
                     )}
                     title={collapsed ? item.label : undefined}
                   >
@@ -251,13 +245,18 @@ export function AppSidebar() {
                       <Icon
                         className={cx(
                           'size-5 shrink-0 transition-colors',
-                          isActive ? 'text-accent-700 dark:text-accent-300' : 'text-text-tertiary'
+                          isActive ? 'text-[#171B18]' : 'text-neutral-400'
                         )}
                       />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </div>
                     {!collapsed && badge !== undefined && (
-                      <Counter color="neutral">{badge}</Counter>
+                      <span className={cx(
+                        'text-[10px] px-1.5 py-0.5 rounded-full font-bold',
+                        isActive ? 'bg-[#171B18] text-accent-400' : 'bg-white/10 text-neutral-300'
+                      )}>
+                        {badge}
+                      </span>
                     )}
                   </Link>
                 );
@@ -265,13 +264,13 @@ export function AppSidebar() {
             </nav>
           </div>
 
-          {/* Dynamic Installed Business Modules (from /api/v1/modules) */}
+          {/* Dynamic Installed Modules */}
           {activeModules.length > 0 && (
             <div>
               {!collapsed && (
-                <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider flex items-center justify-between">
-                  <span>Installed Modules</span>
-                  <span className="text-[10px] bg-accent-100 dark:bg-accent-950 text-accent-800 dark:text-accent-300 px-1.5 py-0.5 rounded-full font-bold">
+                <p className="px-2.5 mb-1.5 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider flex items-center justify-between">
+                  <span>Modules</span>
+                  <span className="text-[10px] bg-accent-500/20 text-accent-400 px-1.5 py-0.5 rounded-full font-bold">
                     {activeModules.length}
                   </span>
                 </p>
@@ -285,16 +284,16 @@ export function AppSidebar() {
                       key={mod.id}
                       href={modHref}
                       className={cx(
-                        'relative flex items-center justify-between rounded-xl transition-all duration-150',
-                        collapsed ? 'size-10 justify-center mx-auto' : 'px-2.5 py-2 text-body-medium',
+                        'relative flex items-center justify-between rounded-2xl transition-all duration-150',
+                        collapsed ? 'size-10 justify-center mx-auto' : 'px-3 py-2 text-body-medium',
                         isActive
-                          ? 'bg-accent-100 dark:bg-accent-950 text-accent-950 dark:text-accent-100 font-bold border border-accent-300 dark:border-accent-800 shadow-2xs before:absolute before:inset-y-1.5 before:start-0 before:w-1.5 before:rounded-e-full before:bg-accent-600 dark:before:bg-accent-400'
-                          : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default font-medium'
+                          ? 'bg-accent-500 text-[#171B18] font-bold shadow-md'
+                          : 'text-neutral-400 hover:text-white hover:bg-white/10 font-medium'
                       )}
                       title={collapsed ? mod.name : undefined}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <RiBox3Line className={cx('size-5 shrink-0', isActive ? 'text-accent-700 dark:text-accent-300' : 'text-text-tertiary')} />
+                        <RiBox3Line className={cx('size-5 shrink-0', isActive ? 'text-[#171B18]' : 'text-neutral-400')} />
                         {!collapsed && <span className="truncate">{mod.name}</span>}
                       </div>
                     </Link>
@@ -306,30 +305,30 @@ export function AppSidebar() {
         </div>
 
         {/* PINNED FOOTER (NOT SCROLLABLE) */}
-        <div className="shrink-0 border-t border-separator-border bg-background-primary-default">
+        <div className="shrink-0 border-t border-white/10 bg-[#171B18]">
           {/* Pinned Helper & Settings Links */}
           <div className="p-2 space-y-0.5">
             <button
               type="button"
               className={cx(
-                'w-full flex items-center text-body-2-medium text-text-secondary hover:text-text-primary transition-colors group cursor-pointer',
-                collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5'
+                'w-full flex items-center text-body-2-medium text-neutral-400 hover:text-white transition-colors group cursor-pointer',
+                collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-3 py-1.5'
               )}
               title={collapsed ? 'Help Center' : undefined}
             >
-              <RiQuestionLine className="size-4 shrink-0 text-text-tertiary group-hover:text-text-primary transition-colors" />
+              <RiQuestionLine className="size-4 shrink-0 text-neutral-400 group-hover:text-white transition-colors" />
               {!collapsed && <span>Help Center</span>}
             </button>
 
             <button
               type="button"
               className={cx(
-                'w-full flex items-center text-body-2-medium text-text-secondary hover:text-text-primary transition-colors group cursor-pointer',
-                collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5'
+                'w-full flex items-center text-body-2-medium text-neutral-400 hover:text-white transition-colors group cursor-pointer',
+                collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-3 py-1.5'
               )}
               title={collapsed ? 'Feedback' : undefined}
             >
-              <RiFeedbackLine className="size-4 shrink-0 text-text-tertiary group-hover:text-text-primary transition-colors" />
+              <RiFeedbackLine className="size-4 shrink-0 text-neutral-400 group-hover:text-white transition-colors" />
               {!collapsed && <span>Feedback</span>}
             </button>
 
@@ -338,10 +337,10 @@ export function AppSidebar() {
                 href="/settings"
                 className={cx(
                   'flex items-center text-body-2-medium transition-colors group',
-                  collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-2.5 py-1.5',
+                  collapsed ? 'size-10 justify-center mx-auto' : 'gap-2.5 px-3 py-1.5',
                   pathname === '/settings'
-                    ? 'text-accent-900 dark:text-accent-300 font-semibold'
-                    : 'text-text-secondary hover:text-text-primary'
+                    ? 'text-accent-400 font-semibold'
+                    : 'text-neutral-400 hover:text-white'
                 )}
                 title={collapsed ? 'Settings' : undefined}
               >
@@ -349,8 +348,8 @@ export function AppSidebar() {
                   className={cx(
                     'size-4 shrink-0 transition-colors',
                     pathname === '/settings'
-                      ? 'text-accent-700 dark:text-accent-300'
-                      : 'text-text-tertiary group-hover:text-text-primary'
+                      ? 'text-accent-400'
+                      : 'text-neutral-400 group-hover:text-white'
                   )}
                 />
                 {!collapsed && <span>Settings</span>}
@@ -358,22 +357,22 @@ export function AppSidebar() {
             )}
           </div>
 
-          {/* User Profile */}
-          <div className="p-3 border-t border-separator-border">
+          {/* User Profile & Logout */}
+          <div className="p-3 border-t border-white/10">
             <div className={cx('flex items-center justify-between gap-2', collapsed && 'justify-center')}>
               <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
                 <Avatar
                   initials={user?.firstName ? user.firstName[0].toUpperCase() : 'M'}
                   size="md"
                   color="lime"
-                  className="shrink-0 font-bold"
+                  className="shrink-0 font-bold ring-1 ring-white/10"
                 />
                 {!collapsed && (
                   <div className="flex flex-col min-w-0 truncate">
-                    <span className="text-body-medium font-semibold text-text-primary truncate">
+                    <span className="text-body-medium font-semibold text-white truncate">
                       {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Modus Admin'}
                     </span>
-                    <span className="text-caption-2-medium text-text-tertiary uppercase truncate">
+                    <span className="text-caption-2-medium text-neutral-400 uppercase truncate">
                       {user?.role?.replace('_', ' ') || 'Super Admin'}
                     </span>
                   </div>
@@ -382,7 +381,7 @@ export function AppSidebar() {
               {!collapsed && (
                 <button
                   onClick={() => setLogoutDialogOpen(true)}
-                  className="p-1.5 rounded-lg text-text-tertiary hover:text-text-destructive hover:bg-background-tertiary-error transition-colors shrink-0"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-white/10 transition-colors shrink-0"
                   title="Log out"
                   aria-label="Log out"
                 >
@@ -394,7 +393,7 @@ export function AppSidebar() {
               <div className="mt-2 flex justify-center">
                 <button
                   onClick={() => setLogoutDialogOpen(true)}
-                  className="p-1.5 rounded-lg text-text-tertiary hover:text-text-destructive hover:bg-background-tertiary-error transition-colors"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-white/10 transition-colors"
                   title="Log out"
                   aria-label="Log out"
                 >

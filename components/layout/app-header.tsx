@@ -23,6 +23,11 @@ export function AppHeader({ title, breadcrumbs = [] }: { title?: string; breadcr
   const pathname = usePathname();
   const { user } = useAuth();
 
+  // On the dashboard, the greeting banner provides the header
+  if (pathname === '/dashboard') {
+    return null;
+  }
+
   // Auto-generate breadcrumbs if not explicitly provided
   const generatedBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : [
     { label: 'Modus', href: '/dashboard' },

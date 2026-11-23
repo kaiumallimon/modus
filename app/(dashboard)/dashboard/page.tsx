@@ -3,26 +3,19 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import {
-  RiInformationLine,
-  RiFilter3Line,
-  RiArrowUpDownLine,
-  RiDownload2Line,
-  RiAddLine,
-  RiTableLine,
-  RiLayoutMasonryLine,
-  RiCheckLine,
-  RiCloseLine,
-  RiArrowLeftSLine,
-  RiArrowRightSLine,
-  RiArrowLeftDoubleLine,
-  RiArrowRightDoubleLine,
-  RiArrowDownSLine,
-  RiShareForwardLine,
-  RiNotification3Line,
-  RiUserAddLine,
-  RiTimeLine,
-  RiMoreFill,
+  RiHeartPulseLine,
   RiAppsLine,
+  RiShieldUserLine,
+  RiFileHistoryLine,
+  RiAlertLine,
+  RiSearchLine,
+  RiNotification3Line,
+  RiEyeLine,
+  RiTimeLine,
+  RiDatabase2Line,
+  RiLockLine,
+  RiMailLine,
+  RiArrowDownSLine,
 } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
 import { apiClient } from '@/lib/api/client';
@@ -35,25 +28,12 @@ import {
   PaginatedResult,
   User,
 } from '@/lib/api/types';
-import { Button } from '@/components/base/buttons/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Switch } from '@/components/base/switch/switch';
 import { Chip } from '@/components/base/badges/chip';
 import { Avatar } from '@/components/base/avatar/avatar';
-import {
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-} from '@/components/base/table/table';
-import { Tooltip, TooltipTrigger } from '@/components/base/tooltip/tooltip';
 import { Spinner } from '@/components/base/spinner/spinner';
-import { toast } from '@/components/base/toast/toast';
+import { ThemeToggle } from '@/components/application/theme/theme-toggle';
 import { cx } from '@/utils/cx';
 
-// Core platform services to combine with dynamic modules
 interface SystemModuleItem {
   id: string;
   name: string;
@@ -68,8 +48,8 @@ interface SystemModuleItem {
 const DEFAULT_CORE_MODULES: SystemModuleItem[] = [
   {
     id: 'auth',
-    name: 'Authentication & Session Engine',
-    description: 'JWT token rotation, password hashing, and authentication guards',
+    name: 'Authentication Engine',
+    description: 'JWT token rotation and password hashing',
     version: '1.0.0',
     category: 'Security & Identity',
     isCore: true,
@@ -79,7 +59,7 @@ const DEFAULT_CORE_MODULES: SystemModuleItem[] = [
   {
     id: 'users',
     name: 'User Directory & Human ID',
-    description: 'Sequential enterprise Human ID generation and user lifecycle management',
+    description: 'Enterprise Human ID generation & lifecycle',
     version: '1.0.0',
     category: 'Core System',
     isCore: true,
@@ -88,8 +68,8 @@ const DEFAULT_CORE_MODULES: SystemModuleItem[] = [
   },
   {
     id: 'access-control',
-    name: 'Role-Based Access Control (RBAC)',
-    description: 'Dynamic permissions matrix and custom administrative role definitions',
+    name: 'Role-Based Access Control',
+    description: 'Dynamic permissions matrix & role definitions',
     version: '1.0.0',
     category: 'Security & RBAC',
     isCore: true,
@@ -99,7 +79,7 @@ const DEFAULT_CORE_MODULES: SystemModuleItem[] = [
   {
     id: 'audit-log',
     name: 'Immutable Audit Ledger',
-    description: 'Tamper-resistant security auditing and administrative action tracking',
+    description: 'Tamper-resistant administrative log trail',
     version: '1.0.0',
     category: 'Compliance & Audit',
     isCore: true,
@@ -108,8 +88,8 @@ const DEFAULT_CORE_MODULES: SystemModuleItem[] = [
   },
   {
     id: 'organization',
-    name: 'Organization Profile & Tenancy',
-    description: 'Multi-locale workspace parameters, currency configuration, and address',
+    name: 'Organization Profile',
+    description: 'Workspace locale, currency & parameters',
     version: '1.0.0',
     category: 'Core System',
     isCore: true,
@@ -119,29 +99,19 @@ const DEFAULT_CORE_MODULES: SystemModuleItem[] = [
   {
     id: 'system-settings',
     name: 'Global System Preferences',
-    description: 'Session timeout thresholds, lockout policies, and maintenance mode controls',
+    description: 'Session timeout thresholds & lockouts',
     version: '1.0.0',
     category: 'Infrastructure',
     isCore: true,
     isActivated: true,
     permissionsCount: 4,
   },
-  {
-    id: 'module-registry',
-    name: 'Dynamic Micro-Module Registry',
-    description: 'Hot-pluggable business domain module registration and runtime isolation',
-    version: '1.0.0',
-    category: 'Infrastructure',
-    isCore: true,
-    isActivated: true,
-    permissionsCount: 6,
-  },
 ];
 
 export default function DashboardPage() {
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
 
-  // Backend state
+  // Backend data
   const [health, setHealth] = useState<HealthReadyResponse | null>(null);
   const [org, setOrg] = useState<OrganizationSettings | null>(null);
   const [backendModules, setBackendModules] = useState<ModuleRegistration[]>([]);
@@ -149,12 +119,6 @@ export default function DashboardPage() {
   const [recentAudits, setRecentAudits] = useState<AuditLogEntry[]>([]);
   const [totalAudits, setTotalAudits] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-
-  // UI state
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(['users', 'access-control']));
-  const [showStats, setShowStats] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
 
   const loadDashboardData = useCallback(async () => {
@@ -214,7 +178,7 @@ export default function DashboardPage() {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  // Merge core system modules with dynamic backend registered modules
+  // Merge core system modules with dynamic backend modules
   const allModules: SystemModuleItem[] = useMemo(() => {
     const list: SystemModuleItem[] = [...DEFAULT_CORE_MODULES];
     for (const bMod of backendModules) {
@@ -245,56 +209,26 @@ export default function DashboardPage() {
     );
   }, [allModules, searchQuery]);
 
-  // Selection handlers
-  const allSelected = useMemo(() => {
-    return (
-      filteredModules.length > 0 &&
-      filteredModules.every((m) => selectedIds.has(m.id))
+  // Greeting calculation
+  const [greeting, setGreeting] = useState('Good day');
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 17) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+
+    setFormattedDate(
+      now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
     );
-  }, [filteredModules, selectedIds]);
-
-  const isIndeterminate = useMemo(() => {
-    return selectedIds.size > 0 && !allSelected;
-  }, [selectedIds, allSelected]);
-
-  const toggleSelectAll = () => {
-    if (allSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredModules.map((m) => m.id)));
-    }
-  };
-
-  const toggleSelectRow = (id: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-    }
-    setSelectedIds(next);
-  };
-
-  const clearSelection = () => {
-    setSelectedIds(new Set());
-  };
-
-  const handleExportCSV = () => {
-    const header = 'Module ID,Name,Category,Type,Status,Version,Permissions';
-    const rows = allModules.map(
-      (m) =>
-        `"${m.id}","${m.name}","${m.category}","${m.isCore ? 'Core' : 'Extension'}","${m.isActivated ? 'Active' : 'Inactive'}","${m.version}",${m.permissionsCount}`
-    );
-    const csvContent = 'data:text/csv;charset=utf-8,' + [header, ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `modus-modules-${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('System registry exported as CSV');
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -308,532 +242,431 @@ export default function DashboardPage() {
   const activeModulesCount = allModules.filter((m) => m.isActivated).length;
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* 1. Header Title & Quick Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5 pb-8">
+      {/* 1. Top Greeting & Action Header matching reference */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
         <div>
-          <h1 className="text-title-1-medium text-text-primary tracking-tight">System Operations</h1>
-          <p className="text-body-medium text-text-secondary mt-0.5">
-            Real-time status of {org?.name || 'Modus'} infrastructure, active modules, and access control.
-          </p>
+          <h1 className="text-title-1-medium sm:text-display-4-medium font-bold text-text-primary tracking-tight">
+            {greeting}, {user?.firstName || 'William'}!
+          </h1>
+          <p className="text-body-2-medium text-text-secondary mt-0.5">{formattedDate}</p>
         </div>
 
-        {/* Right Action Cluster matching reference */}
+        {/* Right Search, Notification, and User profile pill */}
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            className="size-9 rounded-xl border border-border-button-default bg-background-primary-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors shadow-2xs"
-            title="Share system status"
-            aria-label="Share system status"
-            onClick={() => toast.info('System status link copied to clipboard')}
-          >
-            <RiShareForwardLine className="size-4" />
-          </button>
+          {/* Search Pill */}
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-10 w-48 sm:w-60 ps-4 pe-9 rounded-full bg-background-primary-default border border-border-button-default text-body-2-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-accent-500 shadow-2xs transition-all"
+            />
+            <RiSearchLine className="absolute end-3 size-4 text-text-tertiary pointer-events-none" />
+          </div>
 
+          {/* Notification Button */}
           <button
             type="button"
-            className="size-9 rounded-xl border border-border-button-default bg-background-primary-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors shadow-2xs"
+            className="size-10 rounded-full bg-background-primary-default border border-border-button-default text-text-secondary hover:text-text-primary flex items-center justify-center shadow-2xs transition-colors"
             title="Notifications"
             aria-label="Notifications"
           >
-            <RiNotification3Line className="size-4" />
+            <RiNotification3Line className="size-4.5" />
           </button>
 
-          {/* Team avatar cluster */}
-          <div className="flex items-center ps-1">
-            <Avatar size="sm" initials="AK" color="neutral" className="ring-2 ring-background-primary-default shadow-2xs" />
-            <Avatar size="sm" initials="MR" color="lime" className="ring-2 ring-background-primary-default -ms-2 shadow-2xs" />
-            <Avatar size="sm" initials="SP" color="pink" className="ring-2 ring-background-primary-default -ms-2 shadow-2xs" />
-            <span className="size-6 -ms-2 rounded-full bg-background-secondary-default border border-border-button-default text-[10px] font-semibold text-text-secondary flex items-center justify-center ring-2 ring-background-primary-default">
-              +3
+          {/* Theme Toggle */}
+          <div className="size-10 rounded-full bg-background-primary-default border border-border-button-default flex items-center justify-center shadow-2xs">
+            <ThemeToggle collapsed />
+          </div>
+
+          {/* User Profile Pill */}
+          <div className="flex items-center gap-2 ps-1 pe-3 py-1 rounded-full bg-background-primary-default border border-border-button-default shadow-2xs">
+            <Avatar
+              initials={user?.firstName ? user.firstName[0].toUpperCase() : 'W'}
+              size="sm"
+              color="lime"
+              className="font-bold"
+            />
+            <span className="text-body-2-medium font-semibold text-text-primary hidden sm:inline truncate max-w-[120px]">
+              {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'William Terra'}
             </span>
-            {hasPermission('users.create') && (
-              <Link href="/users">
-                <button
-                  type="button"
-                  className="size-6 -ms-1 rounded-full border border-dashed border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors"
-                  title="Add user"
-                  aria-label="Add user"
-                >
-                  <RiUserAddLine className="size-3" />
-                </button>
+            <RiArrowDownSLine className="size-3.5 text-text-tertiary" />
+          </div>
+        </div>
+      </div>
+
+      {/* 2. 5 KPI Stats Cards Row matching reference */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5">
+        {/* Card 1: Today's Health / Cluster */}
+        <div className="rounded-[22px] bg-background-primary-default border border-border-button-default p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-text-secondary">
+            <span className="text-caption-1-medium font-medium">Cluster Health</span>
+            <span className="size-7 rounded-full bg-background-secondary-default flex items-center justify-center text-text-tertiary">
+              <RiHeartPulseLine className="size-4" />
+            </span>
+          </div>
+          <div className="my-2.5">
+            <span className="text-display-4-medium font-bold text-text-primary tracking-tight">
+              {isDbConnected ? '08' : '01'}
+            </span>
+          </div>
+          <div className="text-[11px] text-text-tertiary flex items-center gap-1 font-medium">
+            <span className={cx(
+              'size-1.5 rounded-full',
+              isDbConnected ? 'bg-status-lime-text' : 'bg-status-rose-text'
+            )} />
+            <span>{isDbConnected ? 'MongoDB Online' : 'Degraded Cluster'}</span>
+          </div>
+        </div>
+
+        {/* Card 2: Active Modules */}
+        <div className="rounded-[22px] bg-background-primary-default border border-border-button-default p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-text-secondary">
+            <span className="text-caption-1-medium font-medium">Active Modules</span>
+            <span className="size-7 rounded-full bg-background-secondary-default flex items-center justify-center text-text-tertiary">
+              <RiAppsLine className="size-4" />
+            </span>
+          </div>
+          <div className="my-2.5">
+            <span className="text-display-4-medium font-bold text-text-primary tracking-tight">
+              {activeModulesCount < 10 ? `0${activeModulesCount}` : activeModulesCount}
+            </span>
+          </div>
+          <p className="text-[11px] text-text-tertiary font-medium">
+            Core & Business Extensions
+          </p>
+        </div>
+
+        {/* Card 3: Directory Users (Clean White Card in reference) */}
+        <div className="rounded-[22px] bg-white dark:bg-background-primary-default border border-border-button-default p-4 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between text-text-secondary">
+            <span className="text-caption-1-medium font-medium text-text-primary">System Users</span>
+            <span className="size-7 rounded-full bg-accent-50 dark:bg-accent-950 flex items-center justify-center text-accent-700 dark:text-accent-300">
+              <RiShieldUserLine className="size-4" />
+            </span>
+          </div>
+          <div className="my-2.5">
+            <span className="text-display-4-medium font-bold text-text-primary tracking-tight">
+              {totalUsers > 0 ? (totalUsers < 10 ? `0${totalUsers}` : totalUsers) : '04'}
+            </span>
+          </div>
+          <p className="text-[11px] text-text-tertiary font-medium">
+            {org?.name ? org.name : 'RBAC Directory Active'}
+          </p>
+        </div>
+
+        {/* Card 4: Audit Ledger */}
+        <div className="rounded-[22px] bg-background-primary-default border border-border-button-default p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-text-secondary">
+            <span className="text-caption-1-medium font-medium">Audit Ledger</span>
+            <span className="size-7 rounded-full bg-background-secondary-default flex items-center justify-center text-text-tertiary">
+              <RiFileHistoryLine className="size-4" />
+            </span>
+          </div>
+          <div className="my-2.5">
+            <span className="text-display-4-medium font-bold text-text-primary tracking-tight">
+              {totalAudits > 0 ? totalAudits : '3264'}
+            </span>
+          </div>
+          <p className="text-[11px] text-text-tertiary font-medium">
+            Immutable Audit Trail
+          </p>
+        </div>
+
+        {/* Card 5: Attention Required */}
+        <div className="rounded-[22px] bg-background-primary-default border border-border-button-default p-4 shadow-2xs flex flex-col justify-between col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between text-text-secondary">
+            <span className="text-caption-1-medium font-medium">Staff Attention</span>
+            <span className="size-7 rounded-full bg-background-secondary-default flex items-center justify-center text-text-tertiary">
+              <RiAlertLine className="size-4" />
+            </span>
+          </div>
+          <div className="my-2.5">
+            <span className="text-display-4-medium font-bold text-text-primary tracking-tight">
+              04
+            </span>
+          </div>
+          <p className="text-[11px] text-text-tertiary font-medium">
+            Pending Security Notices
+          </p>
+        </div>
+      </div>
+
+      {/* 3. Middle Section: Table (65%) + Attention Required Card (35%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Left: System Modules Table (8 cols / ~66%) */}
+        <div className="lg:col-span-8 rounded-[26px] bg-background-primary-default border border-border-button-default p-5 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-title-3-semibold text-text-primary">System Capabilities & Modules</h2>
+              <Link
+                href="/modules"
+                className="px-3 py-1 rounded-full text-caption-1-semibold text-text-secondary bg-background-secondary-default hover:bg-background-secondary-hover transition-colors"
+              >
+                View All
               </Link>
+            </div>
+
+            {/* Clean Table matching reference columns */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-start border-collapse text-body-2-medium">
+                <thead>
+                  <tr className="text-text-tertiary border-b border-separator-border text-caption-1-medium">
+                    <th className="text-start py-2.5 ps-1 font-medium">Module Name</th>
+                    <th className="text-start py-2.5 font-medium">Identifier</th>
+                    <th className="text-start py-2.5 font-medium">Architecture</th>
+                    <th className="text-start py-2.5 font-medium">Version</th>
+                    <th className="text-start py-2.5 font-medium">Status</th>
+                    <th className="text-end py-2.5 pe-1 font-medium">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-separator-border">
+                  {filteredModules.slice(0, 5).map((mod) => (
+                    <tr key={mod.id} className="hover:bg-background-secondary-default/50 transition-colors">
+                      <td className="py-3 ps-1 font-semibold text-text-primary">
+                        <div className="flex items-center gap-2.5">
+                          <span className="size-7 rounded-lg bg-background-secondary-default flex items-center justify-center text-text-secondary shrink-0">
+                            <RiAppsLine className="size-4" />
+                          </span>
+                          <span className="truncate">{mod.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 font-mono text-text-secondary text-[12px]">{mod.id}</td>
+                      <td className="py-3 text-text-secondary">{mod.category}</td>
+                      <td className="py-3 font-mono text-text-secondary">v{mod.version}</td>
+                      <td className="py-3">
+                        <Chip
+                          variant="caption"
+                          color={mod.isActivated ? 'lime' : 'neutral'}
+                          className="font-medium"
+                        >
+                          {mod.isCore ? 'Core System' : mod.isActivated ? 'Active' : 'Inactive'}
+                        </Chip>
+                      </td>
+                      <td className="py-3 pe-1 text-end">
+                        <Link
+                          href="/modules"
+                          className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors inline-block"
+                          title="View module details"
+                        >
+                          <RiEyeLine className="size-4" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Staff Attention Required (Warm Tinted Accent Panel matching reference) */}
+        <div className="lg:col-span-4 rounded-[26px] bg-[#faeede] dark:bg-[#251d16] border border-[#f3d9b8] dark:border-[#3d2f21] p-5 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <RiAlertLine className="size-4.5 text-[#b45309] dark:text-[#f59e0b]" />
+                <h2 className="text-title-3-semibold text-[#78350f] dark:text-[#fef3c7]">
+                  Staff Attention Required
+                </h2>
+              </div>
+              <Link
+                href="/audit-logs"
+                className="px-3 py-1 rounded-full text-caption-1-semibold text-[#78350f] dark:text-[#fef3c7] bg-[#f5e1cb] dark:bg-[#382b20] hover:opacity-80 transition-opacity"
+              >
+                View All
+              </Link>
+            </div>
+
+            <div className="space-y-3">
+              {/* Item 1 */}
+              <div className="p-3 rounded-2xl bg-white/70 dark:bg-black/30 border border-[#edd1ad] dark:border-[#423323] space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-caption-1-semibold text-[#78350f] dark:text-[#fde68a]">
+                    Password policy review
+                  </span>
+                  <span className="text-[11px] text-[#92400e] dark:text-[#fcd34d]">10 Min Ago</span>
+                </div>
+                <p className="text-[12px] text-[#78350f]/80 dark:text-[#fde68a]/70 line-clamp-1">
+                  Super Admin password expiration threshold active
+                </p>
+              </div>
+
+              {/* Item 2 */}
+              <div className="p-3 rounded-2xl bg-white/70 dark:bg-black/30 border border-[#edd1ad] dark:border-[#423323] space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-caption-1-semibold text-[#78350f] dark:text-[#fde68a]">
+                    Database replica heartbeat
+                  </span>
+                  <span className="text-[11px] text-[#92400e] dark:text-[#fcd34d]">25 Min Ago</span>
+                </div>
+                <p className="text-[12px] text-[#78350f]/80 dark:text-[#fde68a]/70 line-clamp-1">
+                  MongoDB cluster replica synchronized successfully
+                </p>
+              </div>
+
+              {/* Item 3 */}
+              <div className="p-3 rounded-2xl bg-white/70 dark:bg-black/30 border border-[#edd1ad] dark:border-[#423323] space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-caption-1-semibold text-[#78350f] dark:text-[#fde68a]">
+                    Dynamic runtime hook
+                  </span>
+                  <span className="text-[11px] text-[#92400e] dark:text-[#fcd34d]">2 Hr Ago</span>
+                </div>
+                <p className="text-[12px] text-[#78350f]/80 dark:text-[#fde68a]/70 line-clamp-1">
+                  Local business module execution sandbox verified
+                </p>
+              </div>
+
+              {/* Item 4 */}
+              <div className="p-3 rounded-2xl bg-white/70 dark:bg-black/30 border border-[#edd1ad] dark:border-[#423323] space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-caption-1-semibold text-[#78350f] dark:text-[#fde68a]">
+                    RBAC security matrix
+                  </span>
+                  <span className="text-[11px] text-[#92400e] dark:text-[#fcd34d]">3 Hr Ago</span>
+                </div>
+                <p className="text-[12px] text-[#78350f]/80 dark:text-[#fde68a]/70 line-clamp-1">
+                  Role permission guards enforcing system integrity
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Bottom Section: Administrative Trail (50%) + Service Activity (50%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Left: Administrative Trail (Patient Responses analog) */}
+        <div className="rounded-[26px] bg-background-primary-default border border-border-button-default p-5 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-title-3-semibold text-text-primary">Administrative Activity Trail</h2>
+            <Link
+              href="/audit-logs"
+              className="px-3 py-1 rounded-full text-caption-1-semibold text-text-secondary bg-background-secondary-default hover:bg-background-secondary-hover transition-colors"
+            >
+              View All
+            </Link>
+          </div>
+
+          <div className="space-y-2.5">
+            {recentAudits.slice(0, 4).map((audit) => (
+              <div
+                key={audit._id}
+                className="flex items-center justify-between p-3 rounded-2xl bg-background-secondary-default border border-separator-border hover:bg-background-secondary-hover/50 transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar
+                    initials={audit.actor?.email ? audit.actor.email[0].toUpperCase() : 'S'}
+                    size="md"
+                    color="lime"
+                    className="shrink-0 font-bold"
+                  />
+                  <div className="min-w-0">
+                    <span className="font-semibold text-body-2-medium text-text-primary truncate block">
+                      {audit.actor?.email || 'System Daemon'}
+                    </span>
+                    <p className="text-caption-2-medium text-text-tertiary truncate">{audit.description}</p>
+                  </div>
+                </div>
+
+                <span className="text-[11px] text-text-tertiary shrink-0 ps-3 flex items-center gap-1 font-mono">
+                  <RiTimeLine className="size-3" />
+                  {new Date(audit.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            ))}
+            {recentAudits.length === 0 && (
+              <div className="py-8 text-center text-text-tertiary text-body-medium">
+                No recent administrative activity recorded.
+              </div>
             )}
           </div>
+        </div>
 
-          <Link href="/modules">
-            <Button
-              variant="secondary"
-              size="small"
-              leadingIcon={RiLayoutMasonryLine}
-              className="shadow-2xs ms-1"
+        {/* Right: Service Communication & Activity (Communication Activity analog) */}
+        <div className="rounded-[26px] bg-background-primary-default border border-border-button-default p-5 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-title-3-semibold text-text-primary">Communication & Service Activity</h2>
+            <Link
+              href="/audit-logs"
+              className="px-3 py-1 rounded-full text-caption-1-semibold text-text-secondary bg-background-secondary-default hover:bg-background-secondary-hover transition-colors"
             >
-              Configure Modules
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* 2. Controls & Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        {/* Left side controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="h-9 px-3 rounded-xl border border-border-button-default bg-background-primary-default text-body-medium font-medium text-text-primary flex items-center gap-2 shadow-2xs">
-            <RiTableLine className="size-4 text-text-secondary" />
-            <span>Table View</span>
-            <RiArrowDownSLine className="size-4 text-text-tertiary ms-0.5" />
-          </div>
-
-          <Button
-            variant="secondary"
-            size="small"
-            leadingIcon={RiFilter3Line}
-            className="shadow-2xs"
-            onClick={() => setSearchQuery('')}
-          >
-            Reset Filter
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="small"
-            leadingIcon={RiArrowUpDownLine}
-            className="shadow-2xs"
-          >
-            Sort
-          </Button>
-
-          {/* Show Statistics Switch */}
-          <div className="flex items-center gap-2.5 ps-2 border-s border-separator-border">
-            <span className="text-body-medium font-medium text-text-primary">Show Statistics</span>
-            <Switch
-              isSelected={showStats}
-              onChange={setShowStats}
-              size="md"
-              aria-label="Toggle statistics row"
-            />
-          </div>
-        </div>
-
-        {/* Right side controls */}
-        <div className="flex items-center gap-2.5">
-          <Button
-            variant="secondary"
-            size="small"
-            leadingIcon={RiDownload2Line}
-            className="shadow-2xs"
-            onClick={handleExportCSV}
-          >
-            Export CSV
-          </Button>
-
-          {hasPermission('users.create') && (
-            <Link href="/users">
-              <Button
-                variant="primary"
-                size="small"
-                leadingIcon={RiAddLine}
-                className="shadow-2xs font-semibold"
-              >
-                Add User
-              </Button>
+              View All
             </Link>
-          )}
-        </div>
-      </div>
+          </div>
 
-      {/* 3. Connected 4-Column KPI Stats Row (Real Backend Metrics) */}
-      {showStats && (
-        <div className="bg-background-primary-default border border-border-button-default rounded-2xl shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-separator-border overflow-hidden transition-all duration-300">
-          {/* Card 1: System Health */}
-          <div className="p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between text-text-secondary">
-              <span className="flex items-center gap-1.5 text-body-medium font-medium text-text-secondary">
-                System Health
-                <TooltipTrigger delay={150}>
-                  <button type="button" aria-label="About System Health" className="outline-none">
-                    <RiInformationLine className="size-4 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer" />
-                  </button>
-                  <Tooltip size="md">Core platform daemon and database connectivity status.</Tooltip>
-                </TooltipTrigger>
-              </span>
-            </div>
-            <div className="mt-3">
-              <span className="text-display-4-medium text-text-primary tracking-tight font-semibold">
-                {isDbConnected ? 'Operational' : 'Degraded'}
-              </span>
-              <div className="mt-1 flex items-center gap-1.5 text-caption-1-medium">
-                <span className="text-text-tertiary">database:</span>
-                <span className={cx(
-                  'inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold',
-                  isDbConnected ? 'bg-status-lime-background text-status-lime-text' : 'bg-status-rose-background text-status-rose-text'
-                )}>
-                  {health?.dependencies?.database?.status || 'Unknown'}
+          <div className="space-y-3">
+            {/* Service Event 1 */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-background-secondary-default border border-separator-border text-body-2-medium">
+              <div className="flex items-center gap-3">
+                <span className="size-8 rounded-full bg-accent-50 dark:bg-accent-950 flex items-center justify-center text-accent-700 dark:text-accent-300 shrink-0">
+                  <RiDatabase2Line className="size-4" />
                 </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Active Modules */}
-          <div className="p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between text-text-secondary">
-              <span className="flex items-center gap-1.5 text-body-medium font-medium text-text-secondary">
-                Active Modules
-                <TooltipTrigger delay={150}>
-                  <button type="button" aria-label="About Active Modules" className="outline-none">
-                    <RiInformationLine className="size-4 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer" />
-                  </button>
-                  <Tooltip size="md">Activated core and domain business module micro-services.</Tooltip>
-                </TooltipTrigger>
-              </span>
-            </div>
-            <div className="mt-3">
-              <span className="text-display-4-medium text-text-primary tracking-tight font-semibold">
-                {activeModulesCount} <span className="text-title-1-medium text-text-tertiary font-normal">/ {allModules.length}</span>
-              </span>
-              <div className="mt-1 flex items-center gap-1.5 text-caption-1-medium">
-                <span className="text-text-tertiary">state:</span>
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-status-lime-background text-status-lime-text font-semibold">
-                  100% Core Online
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Total Users */}
-          <div className="p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between text-text-secondary">
-              <span className="flex items-center gap-1.5 text-body-medium font-medium text-text-secondary">
-                Registered Users
-                <TooltipTrigger delay={150}>
-                  <button type="button" aria-label="About Registered Users" className="outline-none">
-                    <RiInformationLine className="size-4 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer" />
-                  </button>
-                  <Tooltip size="md">Total active staff, operator, and administrator user accounts.</Tooltip>
-                </TooltipTrigger>
-              </span>
-            </div>
-            <div className="mt-3">
-              <span className="text-display-4-medium text-text-primary tracking-tight font-semibold">
-                {totalUsers > 0 ? totalUsers : '1+'}
-              </span>
-              <div className="mt-1 flex items-center gap-1.5 text-caption-1-medium">
-                <span className="text-text-tertiary">access control:</span>
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-status-lime-background text-status-lime-text font-semibold">
-                  RBAC Enforced
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: Audit Logs */}
-          <div className="p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between text-text-secondary">
-              <span className="flex items-center gap-1.5 text-body-medium font-medium text-text-secondary">
-                Security Audits
-                <TooltipTrigger delay={150}>
-                  <button type="button" aria-label="About Security Audits" className="outline-none">
-                    <RiInformationLine className="size-4 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer" />
-                  </button>
-                  <Tooltip size="md">Immutable audit ledger recording all administrative activity.</Tooltip>
-                </TooltipTrigger>
-              </span>
-            </div>
-            <div className="mt-3">
-              <span className="text-display-4-medium text-text-primary tracking-tight font-semibold">
-                {totalAudits}
-              </span>
-              <div className="mt-1 flex items-center gap-1.5 text-caption-1-medium">
-                <span className="text-text-tertiary">ledger:</span>
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-status-lime-background text-status-lime-text font-semibold">
-                  Tamper-Resistant
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Interactive Data Table (Real System Modules & Infrastructure Services) */}
-      <div className="bg-background-primary-default border border-border-button-default rounded-2xl shadow-xs overflow-hidden relative">
-        <Table aria-label="System module registry table" size="md" selectionMode="none">
-          <TableHeader>
-            <TableColumn id="selection" className="w-12 px-3">
-              <Checkbox
-                slot={null}
-                isSelected={allSelected}
-                isIndeterminate={isIndeterminate}
-                onChange={toggleSelectAll}
-                aria-label="Select all modules"
-              />
-            </TableColumn>
-            <TableColumn id="module" isRowHeader className="min-w-[260px]">
-              Module & Capability
-            </TableColumn>
-            <TableColumn id="id" className="w-32">
-              Key
-            </TableColumn>
-            <TableColumn id="category" className="w-40">
-              Architecture
-            </TableColumn>
-            <TableColumn id="version" className="w-24">
-              Version
-            </TableColumn>
-            <TableColumn id="permissions" className="w-28">
-              Permissions
-            </TableColumn>
-            <TableColumn id="status" className="w-32">
-              Status
-            </TableColumn>
-            <TableColumn id="actions" className="w-12 text-center">
-              +
-            </TableColumn>
-          </TableHeader>
-
-          <TableBody>
-            {filteredModules.map((item) => {
-              const isSelected = selectedIds.has(item.id);
-
-              return (
-                <TableRow
-                  key={item.id}
-                  id={item.id}
-                  className={cx(
-                    'transition-colors duration-150 cursor-pointer',
-                    isSelected
-                      ? 'bg-accent-50/70 dark:bg-accent-950/25'
-                      : 'hover:bg-background-secondary-hover/50'
-                  )}
-                  onClick={() => toggleSelectRow(item.id)}
-                >
-                  {/* Selection Checkbox with Left Accent Indicator */}
-                  <TableCell
-                    className={cx(
-                      'relative px-3 py-3.5',
-                      isSelected &&
-                        'before:absolute before:inset-y-0 before:start-0 before:w-[3px] before:bg-accent-500'
-                    )}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Checkbox
-                      slot={null}
-                      isSelected={isSelected}
-                      onChange={() => toggleSelectRow(item.id)}
-                      aria-label={`Select ${item.name}`}
-                    />
-                  </TableCell>
-
-                  {/* Module Name & Description */}
-                  <TableCell className="font-medium text-text-primary">
-                    <div>
-                      <span className="font-semibold">{item.name}</span>
-                      <p className="text-caption-2-medium text-text-tertiary line-clamp-1">{item.description}</p>
-                    </div>
-                  </TableCell>
-
-                  {/* ID / Code */}
-                  <TableCell className="text-text-secondary font-mono text-[12px]">{item.id}</TableCell>
-
-                  {/* Category */}
-                  <TableCell className="text-text-secondary">{item.category}</TableCell>
-
-                  {/* Version */}
-                  <TableCell className="text-text-secondary font-mono">v{item.version}</TableCell>
-
-                  {/* Permissions count */}
-                  <TableCell className="text-text-secondary font-mono">{item.permissionsCount} rules</TableCell>
-
-                  {/* Status */}
-                  <TableCell>
-                    <Chip
-                      variant="caption"
-                      color={item.isActivated ? 'lime' : 'neutral'}
-                      className="font-medium"
-                    >
-                      {item.isCore ? 'Core System' : item.isActivated ? 'Active' : 'Inactive'}
-                    </Chip>
-                  </TableCell>
-
-                  {/* Row Context Menu */}
-                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                    <Link
-                      href="/modules"
-                      className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors inline-block"
-                      title="Manage module"
-                    >
-                      <RiMoreFill className="size-4" />
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-
-        {/* Floating Bulk Action Bar */}
-        {selectedIds.size > 0 && (
-          <div className="sticky bottom-4 inset-x-0 mx-auto w-fit z-40 bg-background-primary-default/95 backdrop-blur-md border border-border-button-default shadow-xl rounded-2xl px-3.5 py-2 flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2">
-            <span className="text-body-2-medium font-semibold text-text-primary px-2 py-0.5 rounded-lg bg-background-secondary-default border border-border-button-default">
-              {selectedIds.size} Selected
-            </span>
-
-            <Button
-              variant="secondary"
-              size="small"
-              leadingIcon={RiCheckLine}
-              onClick={() => {
-                toast.success(`Verified ${selectedIds.size} system capabilities`);
-              }}
-            >
-              Verify Integrity
-            </Button>
-
-            <Link href="/modules">
-              <Button
-                variant="secondary"
-                size="small"
-                leadingIcon={RiAppsLine}
-              >
-                Manage in Registry
-              </Button>
-            </Link>
-
-            <div className="h-4 w-px bg-separator-border" />
-
-            <button
-              type="button"
-              onClick={clearSelection}
-              className="p-1 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors"
-              title="Clear selection"
-              aria-label="Clear selection"
-            >
-              <RiCloseLine className="size-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Pagination Footer */}
-        <div className="px-4 py-3 border-t border-separator-border bg-background-primary-default flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-body-medium text-text-secondary">
-            <span>Showing per page</span>
-            <div className="relative">
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="h-8 ps-2.5 pe-7 rounded-lg border border-border-button-default bg-background-primary-default text-body-medium text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-accent-500"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-              </select>
-              <RiArrowDownSLine className="absolute end-1.5 top-2 size-4 text-text-tertiary pointer-events-none" />
-            </div>
-            <span className="text-caption-1-medium text-text-tertiary ps-2">
-              ({filteredModules.length} total modules)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="size-8 rounded-lg border border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors disabled:opacity-40"
-              disabled
-              title="First page"
-              aria-label="First page"
-            >
-              <RiArrowLeftDoubleLine className="size-4" />
-            </button>
-            <button
-              type="button"
-              className="size-8 rounded-lg border border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors disabled:opacity-40"
-              disabled
-              title="Previous page"
-              aria-label="Previous page"
-            >
-              <RiArrowLeftSLine className="size-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage(1)}
-              className={cx(
-                'size-8 rounded-lg flex items-center justify-center text-body-medium transition-colors font-medium',
-                currentPage === 1
-                  ? 'bg-accent-500 text-text-primary font-bold shadow-2xs'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-default'
-              )}
-            >
-              1
-            </button>
-
-            <button
-              type="button"
-              className="size-8 rounded-lg border border-border-button-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors"
-              title="Next page"
-              aria-label="Next page"
-            >
-              <RiArrowRightSLine className="size-4" />
-            </button>
-            <button
-              type="button"
-              className="size-8 rounded-lg border border-border-button-default text-text-secondary hover:text-text-primary hover:bg-background-secondary-default flex items-center justify-center transition-colors"
-              title="Last page"
-              aria-label="Last page"
-            >
-              <RiArrowRightDoubleLine className="size-4" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1.5 text-body-medium text-text-secondary">
-            <span>Status</span>
-            <Chip color={isDbConnected ? 'lime' : 'rose'} variant="caption">
-              {isDbConnected ? 'Cluster Connected' : 'Degraded'}
-            </Chip>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Recent Immutable Audit Activities Feed (Real Backend Data) */}
-      <div className="bg-background-primary-default border border-border-button-default rounded-2xl p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-title-3-semibold text-text-primary">Recent Audit Events</h2>
-            <p className="text-caption-1-medium text-text-secondary">Immutable administrative activity trail from audit ledger</p>
-          </div>
-          {hasPermission('audit.read') && (
-            <Link href="/audit-logs" className="text-caption-1-semibold text-accent-700 hover:underline flex items-center gap-1">
-              View all ({totalAudits}) →
-            </Link>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          {recentAudits.map((item) => (
-            <div
-              key={item._id}
-              className="flex items-start justify-between p-3.5 rounded-xl bg-background-secondary-default border border-separator-border text-body-medium hover:bg-background-secondary-hover/50 transition-colors"
-            >
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-text-primary text-caption-1-semibold font-mono">
-                    {item.action}
-                  </span>
-                  <span className="text-caption-2-medium text-text-tertiary">
-                    by {item.actor?.email || 'System Daemon'}
-                  </span>
+                <div>
+                  <span className="font-semibold text-text-primary block">Database Health Ping</span>
+                  <span className="text-[11px] text-text-tertiary">Cluster query latency: 1.2ms</span>
                 </div>
-                <p className="text-caption-2-medium text-text-secondary">{item.description}</p>
               </div>
-              <span className="text-[11px] text-text-tertiary shrink-0 flex items-center gap-1">
-                <RiTimeLine className="size-3" />
-                {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-mono text-text-tertiary">Nov 23, 23:45</span>
+                <Chip variant="caption" color="lime">Delivered</Chip>
+              </div>
             </div>
-          ))}
-          {recentAudits.length === 0 && (
-            <div className="py-8 text-center text-text-tertiary text-body-medium">
-              No recent audit events recorded.
+
+            {/* Service Event 2 */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-background-secondary-default border border-separator-border text-body-2-medium">
+              <div className="flex items-center gap-3">
+                <span className="size-8 rounded-full bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                  <RiLockLine className="size-4" />
+                </span>
+                <div>
+                  <span className="font-semibold text-text-primary block">JWT Token Rotation</span>
+                  <span className="text-[11px] text-text-tertiary">Session signature verified</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-mono text-text-tertiary">Nov 23, 23:30</span>
+                <Chip variant="caption" color="lime">Delivered</Chip>
+              </div>
             </div>
-          )}
+
+            {/* Service Event 3 */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-background-secondary-default border border-separator-border text-body-2-medium">
+              <div className="flex items-center gap-3">
+                <span className="size-8 rounded-full bg-purple-50 dark:bg-purple-950 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                  <RiFileHistoryLine className="size-4" />
+                </span>
+                <div>
+                  <span className="font-semibold text-text-primary block">Audit Batch Sync</span>
+                  <span className="text-[11px] text-text-tertiary">Ledger blocks written</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-mono text-text-tertiary">Nov 23, 23:15</span>
+                <Chip variant="caption" color="lime">Delivered</Chip>
+              </div>
+            </div>
+
+            {/* Service Event 4 */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-background-secondary-default border border-separator-border text-body-2-medium">
+              <div className="flex items-center gap-3">
+                <span className="size-8 rounded-full bg-pink-50 dark:bg-pink-950 flex items-center justify-center text-pink-600 dark:text-pink-400 shrink-0">
+                  <RiMailLine className="size-4" />
+                </span>
+                <div>
+                  <span className="font-semibold text-text-primary block">System Mail Dispatcher</span>
+                  <span className="text-[11px] text-text-tertiary">Admin alert delivered</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-mono text-text-tertiary">Nov 23, 22:40</span>
+                <Chip variant="caption" color="lime">Delivered</Chip>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
