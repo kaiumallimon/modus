@@ -843,13 +843,13 @@ export default function UsersPage() {
         </div>
 
         {/* Right Side: Export + Add New User button */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <Button
             variant="secondary"
-            size="small"
+            size="medium"
             onClick={() => handleExport()}
             leadingIcon={RiDownloadLine}
-            className="rounded-xl font-medium"
+            className="h-9.5 px-3.5 gap-2 rounded-xl text-body-medium font-medium shadow-2xs hover:shadow-xs transition-all"
           >
             Export
           </Button>
@@ -857,10 +857,10 @@ export default function UsersPage() {
           {hasPermission('users.create') && (
             <Button
               variant="primary"
-              size="small"
+              size="medium"
               onClick={handleOpenCreate}
               leadingIcon={RiUserAddLine}
-              className="rounded-xl font-semibold"
+              className="h-9.5 px-4 gap-2 rounded-xl text-body-medium font-semibold shadow-2xs hover:shadow-xs transition-all"
             >
               Add New User
             </Button>
