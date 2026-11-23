@@ -1,56 +1,49 @@
 "use client";
 
-import { useEffect, useId, useState, useSyncExternalStore } from "react";
-import type { ComponentType, ReactNode } from "react";
 import {
-  Notification,
-  NotificationViewport,
-  type NotificationAction,
-  type NotificationAvatar,
-  type NotificationPosition,
-  type NotificationStatus,
-} from "@/components/base/notification/notification";
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useCallback,
+  type ComponentType,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
+import {
+  RiCheckboxCircleLine,
+  RiErrorWarningLine,
+  RiInformationLine,
+  RiCloseLine,
+  RiNotification3Line,
+} from "@remixicon/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useDirection } from "@/components/foundations/direction/direction";
 import { cx } from "@/utils/cx";
 
-/**
- * Toast — fire-and-forget notifications from anywhere in the app:
- *
- *   toast.success("Changes saved");
- *   toast.error("Upload failed", { description: "The file is over 20MB." });
- *   const id = toast("Exporting…", { duration: Infinity });
- *   toast.update(id, { title: "Export ready", status: "success", duration: 4000 });
- *   toast.dismiss(id);
- *
- * Render one <Toaster /> near the root of the app. It draws each toast as a
- * Notification card inside a NotificationViewport, so toasts share the
- * card, status icons, countdown bar, enter and exit motion, and the spring
- * that closes the stack's gaps. Extra Toasters render nothing, so a second
- * one in a nested layout never doubles every toast.
- *
- * The region is a polite live region (errors are announced as alerts). Every
- * countdown pauses while the pointer or keyboard focus is inside the stack,
- * so nobody loses a toast while reading it or reaching for its action.
- */
-
-type IconComponent = ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
-
+export type ToastStatus = "success" | "error" | "information" | "neutral";
 export type ToastId = string | number;
 
+type IconComponent = ComponentType<{
+  className?: string;
+  "aria-hidden"?: boolean | "true" | "false";
+}>;
+
+export interface ToastAction {
+  label: ReactNode;
+  onClick?: () => void;
+  variant?: "primary" | "secondary";
+}
+
 export interface ToastOptions {
-  /** Reuse an id to replace a toast that is still showing. */
   id?: ToastId;
   description?: ReactNode;
-  status?: NotificationStatus;
-  /** Custom leading icon; defaults to the status icon. */
+  status?: ToastStatus;
   icon?: IconComponent;
-  avatar?: NotificationAvatar;
-  /** Small buttons under the message. Pressing one also dismisses the toast. */
-  actions?: NotificationAction[];
-  /** Milliseconds before it dismisses itself; `Infinity` keeps it until closed. Default from the Toaster (5000). */
+  actions?: ToastAction[];
   duration?: number;
-  /** Show the close button. Default true. */
   dismissible?: boolean;
-  /** Called once the toast has left the screen. */
   onDismiss?: () => void;
 }
 
@@ -58,9 +51,12 @@ interface ToastRecord extends ToastOptions {
   id: ToastId;
   title: ReactNode;
   dismissed: boolean;
+  createdAt: number;
 }
 
-/* -------------------------------------------------------------------- store */
+/* -------------------------------------------------------------------------- */
+/*  Store                                                                     */
+/* -------------------------------------------------------------------------- */
 
 let toasts: ToastRecord[] = [];
 let nextId = 1;
@@ -79,9 +75,20 @@ function subscribe(listener: () => void) {
 
 function show(title: ReactNode, options: ToastOptions = {}): ToastId {
   const id = options.id ?? nextId++;
-  const record: ToastRecord = { ...options, id, title, dismissed: false };
+  const record: ToastRecord = {
+    ...options,
+    id,
+    title,
+    dismissed: false,
+    createdAt: Date.now(),
+  };
+
   const existing = toasts.findIndex((item) => item.id === id);
-  toasts = existing >= 0 ? toasts.map((item, index) => (index === existing ? record : item)) : [...toasts, record];
+  if (existing >= 0) {
+    toasts = toasts.map((item, index) => (index === existing ? record : item));
+  } else {
+    toasts = [...toasts, record];
+  }
   emit();
   return id;
 }
@@ -93,16 +100,19 @@ function remove(id: ToastId) {
   record?.onDismiss?.();
 }
 
-/** Show a toast. Returns its id, for `toast.update` and `toast.dismiss`. */
 export function toast(title: ReactNode, options?: ToastOptions): ToastId {
   return show(title, options);
 }
 
-toast.success = (title: ReactNode, options?: Omit<ToastOptions, "status">) => show(title, { ...options, status: "success" });
-toast.error = (title: ReactNode, options?: Omit<ToastOptions, "status">) => show(title, { ...options, status: "error" });
-toast.info = (title: ReactNode, options?: Omit<ToastOptions, "status">) => show(title, { ...options, status: "information" });
+toast.success = (title: ReactNode, options?: Omit<ToastOptions, "status">) =>
+  show(title, { ...options, status: "success" });
 
-/** Change a toast that is showing. A new `duration` restarts its countdown. */
+toast.error = (title: ReactNode, options?: Omit<ToastOptions, "status">) =>
+  show(title, { ...options, status: "error" });
+
+toast.info = (title: ReactNode, options?: Omit<ToastOptions, "status">) =>
+  show(title, { ...options, status: "information" });
+
 toast.update = (id: ToastId, options: ToastOptions & { title?: ReactNode }) => {
   const current = toasts.find((item) => item.id === id && !item.dismissed);
   if (!current) return;
@@ -110,16 +120,222 @@ toast.update = (id: ToastId, options: ToastOptions & { title?: ReactNode }) => {
   show(title, { ...current, ...rest, id });
 };
 
-/** Dismiss one toast, or every toast when called without an id. */
 toast.dismiss = (id?: ToastId) => {
-  toasts = toasts.map((item) => (id === undefined || item.id === id ? { ...item, dismissed: true } : item));
+  toasts = toasts.map((item) =>
+    id === undefined || item.id === id ? { ...item, dismissed: true } : item
+  );
   emit();
 };
 
-/* ------------------------------------------------------------------ toaster */
+/* -------------------------------------------------------------------------- */
+/*  Toast Item (Stacked Card)                                                 */
+/* -------------------------------------------------------------------------- */
 
-// Only the first mounted Toaster draws the stack; the rest stand by and take
-// over if it unmounts.
+interface ToastItemProps {
+  item: ToastRecord;
+  index: number;
+  total?: number;
+  isHovered: boolean;
+  yOffset: number;
+  onHeightChange: (id: ToastId, height: number) => void;
+  onDismiss: (id: ToastId) => void;
+  defaultDuration: number;
+}
+
+const STATUS_ICONS: Record<ToastStatus, IconComponent> = {
+  success: RiCheckboxCircleLine,
+  error: RiErrorWarningLine,
+  information: RiInformationLine,
+  neutral: RiNotification3Line,
+};
+
+function ToastItem({
+  item,
+  index,
+  total: _total,
+  isHovered,
+  yOffset,
+  onHeightChange,
+  onDismiss,
+  defaultDuration,
+}: ToastItemProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const status: ToastStatus = item.status ?? "neutral";
+  const Icon = item.icon ?? STATUS_ICONS[status];
+  const duration = item.duration ?? defaultDuration;
+  const hasAutoDismiss = Number.isFinite(duration) && duration > 0;
+
+  // Measure element height for dynamic stacking layout
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const el = cardRef.current;
+    const update = () => {
+      onHeightChange(item.id, el.offsetHeight);
+    };
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [item.id, onHeightChange]);
+
+  // Auto-dismiss countdown
+  useEffect(() => {
+    if (!hasAutoDismiss || item.dismissed) return;
+    if (isHovered) return; // Pause timer on hover
+
+    const timer = window.setTimeout(() => {
+      onDismiss(item.id);
+    }, duration);
+
+    return () => window.clearTimeout(timer);
+  }, [hasAutoDismiss, item.dismissed, isHovered, duration, item.id, onDismiss]);
+
+  // Stacking transform properties
+  // index 0 = front (newest)
+  const isFront = index === 0;
+  const isSecond = index === 1;
+  const isThird = index === 2;
+  const isHidden = index > 2;
+
+  // Spring positioning
+  const scale = isHovered ? 1 : isFront ? 1 : isSecond ? 0.94 : isThird ? 0.88 : 0.82;
+  const opacity = isHovered ? 1 : isHidden ? 0 : isFront ? 1 : isSecond ? 0.88 : 0.68;
+  const zIndex = 60 - index;
+
+  return (
+    <motion.div
+      ref={cardRef}
+      layout="position"
+      drag="x"
+      dragConstraints={{ left: 0, right: 300 }}
+      dragElastic={{ left: 0.05, right: 0.7 }}
+      onDragEnd={(_, info) => {
+        if (info.offset.x > 80 || info.velocity.x > 300) {
+          onDismiss(item.id);
+        }
+      }}
+      initial={{ opacity: 0, y: 24, scale: 0.92 }}
+      animate={{
+        opacity,
+        y: yOffset,
+        scale,
+        transition: {
+          type: "spring",
+          stiffness: 420,
+          damping: 32,
+          mass: 0.8,
+        },
+      }}
+      exit={{
+        opacity: 0,
+        y: 12,
+        scale: 0.9,
+        transition: { duration: 0.16, ease: "easeOut" },
+      }}
+      style={{
+        zIndex,
+        pointerEvents: isHidden && !isHovered ? "none" : "auto",
+      }}
+      className={cx(
+        "absolute bottom-0 end-0 w-[356px] sm:w-[380px] max-w-[calc(100vw-32px)]",
+        "bg-white/95 dark:bg-[#181C18]/95 backdrop-blur-md rounded-2xl",
+        "border border-[#E4E8DD] dark:border-[#2C332A]",
+        "shadow-[0_8px_30px_rgba(23,27,24,0.08),0_2px_6px_rgba(23,27,24,0.04)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.55)]",
+        "p-3.5 pe-8 overflow-hidden select-none cursor-default"
+      )}
+    >
+      <div className="flex items-start gap-3">
+        {/* Status Icon Indicator */}
+        <div
+          className={cx(
+            "size-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
+            status === "success" &&
+              "bg-[#EDF6D7] dark:bg-[#A5D632]/15 text-[#8DBA20] dark:text-[#A5D632] border border-[#A5D632]/35 dark:border-[#A5D632]/25",
+            status === "error" &&
+              "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40",
+            status === "information" &&
+              "bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/40",
+            status === "neutral" &&
+              "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
+          )}
+        >
+          <Icon className="size-4.5" aria-hidden />
+        </div>
+
+        {/* Content Section */}
+        <div className="flex-1 min-w-0 pr-1">
+          <div className="text-sm font-semibold text-[#171B18] dark:text-[#F3F5EE] leading-snug break-words">
+            {item.title}
+          </div>
+          {item.description && (
+            <div className="text-xs text-[#73796E] dark:text-[#A1A79B] mt-1 leading-relaxed break-words">
+              {item.description}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          {item.actions && item.actions.length > 0 && (
+            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#E4E8DD]/60 dark:border-[#2C332A]/60">
+              {item.actions.map((action, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    action.onClick?.();
+                    onDismiss(item.id);
+                  }}
+                  className={cx(
+                    "px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer",
+                    action.variant === "primary"
+                      ? "bg-[#A5D632] hover:bg-[#97C72A] text-[#171B18]"
+                      : "bg-background-secondary-default hover:bg-background-secondary-hover text-text-primary border border-border-button-default"
+                  )}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Dismiss Button */}
+      {item.dismissible !== false && (
+        <button
+          type="button"
+          onClick={() => onDismiss(item.id)}
+          aria-label="Close notification"
+          className="absolute right-2.5 top-2.5 size-6 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8DBA20] cursor-pointer"
+        >
+          <RiCloseLine className="size-4" aria-hidden />
+        </button>
+      )}
+
+      {/* Subtle Bottom Auto-dismiss Progress Indicator */}
+      {hasAutoDismiss && (
+        <span
+          className={cx(
+            "absolute inset-x-0 bottom-0 h-[2.5px] rounded-b-2xl origin-left",
+            status === "success" && "bg-[#A5D632]",
+            status === "error" && "bg-red-500",
+            status === "information" && "bg-sky-500",
+            status === "neutral" && "bg-[#A5D632]"
+          )}
+          style={{
+            animation: `toast-progress ${duration}ms linear forwards`,
+            animationPlayState: isHovered ? "paused" : "running",
+          }}
+        />
+      )}
+    </motion.div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Toaster (Portal & Stack Controller)                                       */
+/* -------------------------------------------------------------------------- */
+
 let owners: string[] = [];
 const ownerListeners = new Set<() => void>();
 
@@ -131,110 +347,98 @@ function subscribeOwners(listener: () => void) {
 }
 
 export interface ToasterProps {
-  /** Edge or corner the stack is anchored to. Default `bottom-end`. */
-  position?: NotificationPosition;
-  /** How many toasts show at once; older ones leave as new ones arrive. Default 3. */
   limit?: number;
-  /** Default countdown in milliseconds. Default 5000. */
   duration?: number;
-  /** Accessible name of the region. */
-  "aria-label"?: string;
-  /** Accessible name of each toast's close button. */
-  closeLabel?: string;
   className?: string;
+  "aria-label"?: string;
 }
 
 export function Toaster({
-  position = "bottom-end",
-  limit = 3,
-  duration = 5000,
-  "aria-label": ariaLabel = "Notifications",
-  closeLabel,
+  limit = 4,
+  duration = 4500,
   className,
+  "aria-label": ariaLabel = "Notifications",
 }: ToasterProps) {
   const ownerId = useId();
+  const direction = useDirection();
   const items = useSyncExternalStore(subscribe, () => toasts, () => toasts);
   const isOwner = useSyncExternalStore(subscribeOwners, () => owners[0] === ownerId, () => false);
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
+
+  const [mounted, setMounted] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [heights, setHeights] = useState<Record<string | number, number>>({});
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     owners = [...owners, ownerId];
-    ownerListeners.forEach((listener) => listener());
+    ownerListeners.forEach((l) => l());
     return () => {
-      owners = owners.filter((owner) => owner !== ownerId);
-      ownerListeners.forEach((listener) => listener());
+      owners = owners.filter((id) => id !== ownerId);
+      ownerListeners.forEach((l) => l());
     };
   }, [ownerId]);
 
-  // Past the limit, the oldest toasts play their exit and make room.
-  useEffect(() => {
-    if (!isOwner) return;
-    const active = items.filter((item) => !item.dismissed);
-    if (active.length > limit) {
-      const overflow = new Set(active.slice(0, active.length - limit).map((item) => item.id));
-      toasts = toasts.map((item) => (overflow.has(item.id) ? { ...item, dismissed: true } : item));
-      emit();
-    }
-  }, [items, limit, isOwner]);
+  const handleHeightChange = useCallback((id: ToastId, h: number) => {
+    setHeights((prev) => (prev[id] === h ? prev : { ...prev, [id]: h }));
+  }, []);
 
-  // A toast removed from under the pointer or focus fires no leave or blur,
-  // so an emptied stack resets both, or the next toast would start paused.
-  const empty = items.length === 0;
-  const [wasEmpty, setWasEmpty] = useState(empty);
-  if (empty !== wasEmpty) {
-    setWasEmpty(empty);
-    if (empty) {
-      setHovered(false);
-      setFocused(false);
-    }
-  }
+  const handleDismiss = useCallback((id: ToastId) => {
+    remove(id);
+  }, []);
 
-  if (!isOwner) return null;
+  if (!mounted || !isOwner || typeof document === "undefined") return null;
 
-  return (
-    <NotificationViewport
-      position={position}
-      aria-label={ariaLabel}
+  // Active un-dismissed toasts, latest on top (index 0)
+  const activeToasts = items.filter((item) => !item.dismissed);
+  const reversed = [...activeToasts].reverse().slice(0, limit);
+
+  return createPortal(
+    <div
+      dir={direction}
       role="region"
-      aria-live="polite"
-      aria-relevant="additions text"
-      className={cx("z-130", className)}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
-      onFocus={() => setFocused(true)}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
-      }}
+      aria-label={ariaLabel}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={cx(
+        "fixed end-4 bottom-4 sm:end-6 sm:bottom-6 z-[9999]",
+        "pointer-events-none flex flex-col items-end w-[380px] max-w-[calc(100vw-32px)] h-0",
+        className
+      )}
     >
-      {items.map((item) => {
-        const timeout = item.duration ?? duration;
-        return (
-          <Notification
-            // A toast replaced under the same id remounts, so its countdown restarts.
-            key={`${item.id}:${timeout}`}
-            title={item.title}
-            description={item.description}
-            status={item.status}
-            icon={item.icon}
-            avatar={item.avatar}
-            dismissible={item.dismissible ?? true}
-            closeLabel={closeLabel}
-            actions={item.actions?.map((action) => ({
-              ...action,
-              onClick: () => {
-                action.onClick?.();
-                toast.dismiss(item.id);
-              },
-            }))}
-            autoDismissDuration={Number.isFinite(timeout) && timeout > 0 ? timeout : undefined}
-            paused={hovered || focused}
-            dismissed={item.dismissed}
-            introDelay={0}
-            onDismiss={() => remove(item.id)}
-          />
-        );
-      })}
-    </NotificationViewport>
+      <AnimatePresence mode="popLayout">
+        {reversed.map((item, index) => {
+          // Calculate cumulative vertical offset when hovered, or card stack offset when collapsed
+          let yOffset = 0;
+          if (isHovered) {
+            let offset = 0;
+            for (let j = 0; j < index; j++) {
+              const h = heights[reversed[j].id] || 64;
+              offset += h + 10;
+            }
+            yOffset = -offset;
+          } else {
+            yOffset = -index * 14;
+          }
+
+          return (
+            <ToastItem
+              key={item.id}
+              item={item}
+              index={index}
+              total={reversed.length}
+              isHovered={isHovered}
+              yOffset={yOffset}
+              onHeightChange={handleHeightChange}
+              onDismiss={handleDismiss}
+              defaultDuration={duration}
+            />
+          );
+        })}
+      </AnimatePresence>
+    </div>,
+    document.body
   );
 }
