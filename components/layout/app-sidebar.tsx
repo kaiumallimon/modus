@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -17,6 +17,7 @@ import {
   RiArrowLeftSLine,
   RiArrowRightSLine,
   RiSearchLine,
+  RiCloseLine,
   RiFeedbackLine,
   RiMoreFill,
   RiNotification3Line,
@@ -35,6 +36,11 @@ import { useAuth } from '@/providers/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import { ModuleRegistration } from '@/lib/api/types';
+import {
+  SIDEBAR_NAV_GROUPS,
+  SidebarNavIconKey,
+  filterSidebarGroups,
+} from '@/lib/navigation/sidebar';
 import { cx } from '@/utils/cx';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Kbd } from '@/components/base/kbd/kbd';
@@ -44,57 +50,74 @@ import { ThemeToggle } from '@/components/application/theme/theme-toggle';
 import { ScrollFade, useScrollFade } from '@/components/foundations/scroll-fade/scroll-fade';
 import { toast } from '@/components/base/toast/toast';
 
-interface NavItemConfig {
+const NAV_ICONS: Record<SidebarNavIconKey, React.ComponentType<{ className?: string }>> = {
+  dashboard: RiDashboardLine,
+  organization: RiBuildingLine,
+  users: RiUserLine,
+  roles: RiShieldUserLine,
+  'audit-logs': RiFileHistoryLine,
+  modules: RiAppsLine,
+  cdn: RiFolderCloudLine,
+};
+
+interface SidebarNavLinkProps {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  permission?: string;
+  isActive: boolean;
+  collapsed: boolean;
   badge?: number | string;
 }
 
-const BACKEND_NAV_ITEMS: NavItemConfig[] = [
-  {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: RiDashboardLine,
-  },
-  {
-    label: 'Organization',
-    href: '/organization',
-    icon: RiBuildingLine,
-    permission: 'organization.read',
-  },
-  {
-    label: 'Users',
-    href: '/users',
-    icon: RiUserLine,
-    permission: 'users.read',
-  },
-  {
-    label: 'Roles & Access',
-    href: '/roles',
-    icon: RiShieldUserLine,
-    permission: 'roles.read',
-  },
-  {
-    label: 'Module Registry',
-    href: '/modules',
-    icon: RiAppsLine,
-    permission: 'modules.read',
-  },
-  {
-    label: 'CDN Explorer',
-    href: '/cdn',
-    icon: RiFolderCloudLine,
-    permission: 'cdn.read',
-  },
-  {
-    label: 'Audit Logs',
-    href: '/audit-logs',
-    icon: RiFileHistoryLine,
-    permission: 'audit.read',
-  },
-];
+function SidebarNavLink({
+  label,
+  href,
+  icon: Icon,
+  isActive,
+  collapsed,
+  badge,
+}: SidebarNavLinkProps) {
+  return (
+    <Link
+      href={href}
+      className={cx(
+        'group relative flex items-center justify-between rounded-lg transition-colors',
+        collapsed ? 'size-10 justify-center mx-auto' : 'px-3 py-2 text-body-2-medium',
+        isActive
+          ? 'bg-background-secondary-default text-text-primary font-semibold'
+          : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover font-medium'
+      )}
+      title={collapsed ? label : undefined}
+    >
+      {isActive && !collapsed && (
+        <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e-full bg-accent-500" />
+      )}
+      <div className="flex items-center gap-2.5 min-w-0">
+        <Icon
+          className={cx(
+            'size-4.5 shrink-0 transition-colors',
+            isActive
+              ? 'text-accent-600 dark:text-accent-400'
+              : 'text-text-tertiary group-hover:text-text-primary'
+          )}
+        />
+        {!collapsed && <span className="truncate">{label}</span>}
+      </div>
+      {!collapsed && badge !== undefined && (
+        <span
+          className={cx(
+            'text-[10px] px-1.5 py-0.5 rounded font-semibold',
+            isActive
+              ? 'bg-background-primary-default border border-border-button-default text-text-primary'
+              : 'bg-background-secondary-default text-text-tertiary'
+          )}
+        >
+          {badge}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -105,7 +128,30 @@ export function AppSidebar() {
   const [auditCount, setAuditCount] = useState<number | undefined>(undefined);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollFade = useScrollFade();
+
+  // Keyboard shortcut: press 'f' outside text inputs to focus sidebar Find search
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const isEditable =
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.tagName === 'SELECT' ||
+        target?.isContentEditable;
+
+      if (!isEditable && event.key.toLowerCase() === 'f') {
+        event.preventDefault();
+        if (collapsed) setCollapsed(false);
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [collapsed]);
 
   useEffect(() => {
     async function loadBackendData() {
@@ -138,13 +184,10 @@ export function AppSidebar() {
     loadBackendData();
   }, [user, hasPermission]);
 
-  const visibleNav = BACKEND_NAV_ITEMS.filter((item) => {
-    if (!item.permission) return true;
-    return hasPermission(item.permission);
-  });
-
-  const filteredNav = visibleNav.filter((item) =>
-    item.label.toLowerCase().includes(searchQuery.toLowerCase().trim())
+  const filteredGroups = filterSidebarGroups(SIDEBAR_NAV_GROUPS, hasPermission, searchQuery);
+  const trimmedQuery = searchQuery.toLowerCase().trim();
+  const filteredModules = activeModules.filter(
+    (mod) => !trimmedQuery || mod.name.toLowerCase().includes(trimmedQuery)
   );
 
   const renderUserMenuContent = (close: () => void) => (
@@ -336,7 +379,11 @@ export function AppSidebar() {
           {collapsed ? (
             <div className="flex justify-center">
               <button
-                onClick={() => setCollapsed(false)}
+                type="button"
+                onClick={() => {
+                  setCollapsed(false);
+                  setTimeout(() => searchInputRef.current?.focus(), 0);
+                }}
                 className="size-8.5 rounded-full bg-background-secondary-default border border-border-button-default flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-secondary-hover transition-colors shadow-2xs"
                 title="Find (F)"
                 aria-label="Find"
@@ -348,17 +395,34 @@ export function AppSidebar() {
             <div className="relative flex items-center">
               <RiSearchLine className="absolute start-3 size-4 text-text-tertiary pointer-events-none" />
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Find"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape' && searchQuery) {
+                    setSearchQuery('');
+                  }
+                }}
                 className="w-full h-8.5 ps-9 pe-9 rounded-full bg-background-secondary-default border border-border-button-default text-body-2-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all shadow-2xs"
               />
-              <div className="absolute end-2.5 flex items-center pointer-events-none">
-                <Kbd className="bg-background-primary-default border border-border-button-default text-text-tertiary shadow-2xs text-[10px] px-1.5 py-0.5 rounded-full">
-                  F
-                </Kbd>
-              </div>
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute end-2.5 size-5 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-background-primary-default transition-colors cursor-pointer"
+                  aria-label="Clear search"
+                >
+                  <RiCloseLine className="size-3.5" />
+                </button>
+              ) : (
+                <div className="absolute end-2.5 flex items-center pointer-events-none">
+                  <Kbd className="bg-background-primary-default border border-border-button-default text-text-tertiary shadow-2xs text-[10px] px-1.5 py-0.5 rounded-full">
+                    F
+                  </Kbd>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -368,118 +432,104 @@ export function AppSidebar() {
           {/* Top Scroll Fade (fades items under searchbar on scroll) */}
           <ScrollFade progress={scrollFade.progress} surfaceClassName="from-background-primary-default" />
 
-          {/* Scrollable Navigation Items */}
+          {/* Scrollable Categorized Navigation */}
           <div
             onScroll={scrollFade.onScroll}
-            className="flex-1 overflow-y-auto px-3 py-2 space-y-4 min-h-0 [scrollbar-width:thin]"
+            className="flex-1 overflow-y-auto px-3 py-2 space-y-5 min-h-0 [scrollbar-width:thin]"
           >
-            <div>
-              {!collapsed && (
-                <p className="px-2 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                  Main Menu
-                </p>
-              )}
-              <nav className="space-y-1">
-                {filteredNav.map((item) => {
-                  const Icon = item.icon;
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
-                  const badge = item.href === '/audit-logs' ? auditCount : item.badge;
+            {filteredGroups.map((group, groupIndex) => (
+              <div key={group.id}>
+                {collapsed ? (
+                  groupIndex > 0 && (
+                    <div
+                      aria-hidden
+                      className="w-6 mx-auto mb-2.5 border-t border-separator-border"
+                    />
+                  )
+                ) : (
+                  <p className="px-2 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
+                    {group.label}
+                  </p>
+                )}
+                <nav className="space-y-1" aria-label={group.label}>
+                  {group.items.map((item) => {
+                    const Icon = NAV_ICONS[item.icon];
+                    const isActive =
+                      pathname === item.href ||
+                      (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
+                    const badge = item.href === '/audit-logs' ? auditCount : item.badge;
 
-                  return (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className={cx(
-                        'group relative flex items-center justify-between rounded-lg transition-colors',
-                        collapsed ? 'size-10 justify-center mx-auto' : 'px-3 py-2 text-body-2-medium',
-                        isActive
-                          ? 'bg-background-secondary-default text-text-primary font-semibold'
-                          : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover font-medium'
-                      )}
-                      title={collapsed ? item.label : undefined}
-                    >
-                      {isActive && !collapsed && (
-                        <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e-full bg-accent-500" />
-                      )}
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Icon
-                          className={cx(
-                            'size-4.5 shrink-0 transition-colors',
-                            isActive
-                              ? 'text-accent-600 dark:text-accent-400'
-                              : 'text-text-tertiary group-hover:text-text-primary'
-                          )}
-                        />
-                        {!collapsed && <span className="truncate">{item.label}</span>}
-                      </div>
-                      {!collapsed && badge !== undefined && (
-                        <span
-                          className={cx(
-                            'text-[10px] px-1.5 py-0.5 rounded font-semibold',
-                            isActive
-                              ? 'bg-background-primary-default border border-border-button-default text-text-primary'
-                              : 'bg-background-secondary-default text-text-tertiary'
-                          )}
-                        >
-                          {badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
+                    return (
+                      <SidebarNavLink
+                        key={item.id}
+                        label={item.label}
+                        href={item.href}
+                        icon={Icon}
+                        isActive={isActive}
+                        collapsed={collapsed}
+                        badge={badge}
+                      />
+                    );
+                  })}
+                </nav>
+              </div>
+            ))}
 
             {/* Dynamic Installed Business Modules */}
-            {activeModules.length > 0 && (
+            {filteredModules.length > 0 && (
               <div>
-                {!collapsed && (
+                {collapsed ? (
+                  filteredGroups.length > 0 && (
+                    <div
+                      aria-hidden
+                      className="w-6 mx-auto mb-2.5 border-t border-separator-border"
+                    />
+                  )
+                ) : (
                   <p className="px-2 mb-1.5 text-[11px] font-semibold text-text-tertiary uppercase tracking-wider flex items-center justify-between">
                     <span>Modules</span>
                     <span className="text-[10px] bg-accent-50 text-accent-700 dark:bg-accent-950 dark:text-accent-300 px-1.5 py-0.5 rounded font-semibold">
-                      {activeModules.length}
+                      {filteredModules.length}
                     </span>
                   </p>
                 )}
-                <nav className="space-y-1">
-                  {activeModules.map((mod) => {
+                <nav className="space-y-1" aria-label="Modules">
+                  {filteredModules.map((mod) => {
                     const modHref = `/modules/${mod.id}`;
                     const isActive = pathname === modHref;
                     return (
-                      <Link
+                      <SidebarNavLink
                         key={mod.id}
+                        label={mod.name}
                         href={modHref}
-                        className={cx(
-                          'group relative flex items-center justify-between rounded-lg transition-colors',
-                          collapsed ? 'size-10 justify-center mx-auto' : 'px-3 py-2 text-body-2-medium',
-                          isActive
-                            ? 'bg-background-secondary-default text-text-primary font-semibold'
-                            : 'text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover font-medium'
-                        )}
-                        title={collapsed ? mod.name : undefined}
-                      >
-                        {isActive && !collapsed && (
-                          <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e-full bg-accent-500" />
-                        )}
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <RiBox3Line
-                            className={cx(
-                              'size-4.5 shrink-0',
-                              isActive
-                                ? 'text-accent-600 dark:text-accent-400'
-                                : 'text-text-tertiary group-hover:text-text-primary'
-                            )}
-                          />
-                          {!collapsed && <span className="truncate">{mod.name}</span>}
-                        </div>
-                      </Link>
+                        icon={RiBox3Line}
+                        isActive={isActive}
+                        collapsed={collapsed}
+                      />
                     );
                   })}
                 </nav>
               </div>
             )}
+
+            {/* Empty Search State */}
+            {!collapsed &&
+              trimmedQuery.length > 0 &&
+              filteredGroups.length === 0 &&
+              filteredModules.length === 0 && (
+                <div className="px-2 py-6 text-center space-y-2">
+                  <p className="text-caption-1-medium text-text-tertiary">
+                    No matching menu items
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="text-caption-1-semibold text-accent-700 dark:text-accent-300 hover:underline cursor-pointer"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              )}
           </div>
 
           {/* Bottom Scroll Fade (fades items above pinned footer) */}
