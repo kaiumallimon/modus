@@ -272,7 +272,7 @@ export function AppSidebar() {
     <>
       <aside
         className={cx(
-          'relative flex flex-col bg-background-primary-default text-text-primary transition-all duration-200 ease-in-out shrink-0 z-30 select-none border-r border-border-button-default h-screen shadow-2xs',
+          'relative flex flex-col bg-background-primary-default text-text-primary transition-all duration-200 ease-in-out shrink-0 z-30 select-none border-r border-border-button-default h-full shadow-2xs',
           collapsed ? 'w-18' : 'w-64'
         )}
       >

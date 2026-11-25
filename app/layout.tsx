@@ -38,7 +38,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-background-primary-default text-text-primary antialiased font-sans">
+      <body className="min-h-full flex flex-col overflow-x-hidden bg-background-primary-default text-text-primary antialiased font-sans">
         <AuthProvider>
           {children}
           <Toaster />
