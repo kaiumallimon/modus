@@ -58,14 +58,6 @@ export interface InstallationStatus {
   version: string;
 }
 
-export interface Address {
-  street?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-}
-
 export interface InstallationSetupPayload {
   administrator: {
     firstName: string;
@@ -73,16 +65,10 @@ export interface InstallationSetupPayload {
     email: string;
     password: string;
   };
-  organization: {
-    name: string;
-    legalName?: string;
-    email: string;
-    phone?: string;
-    website?: string;
-    address?: Address;
-    currency?: string;
-    timezone?: string;
-    locale?: string;
+  settings?: {
+    defaultCurrency?: string;
+    defaultTimezone?: string;
+    defaultLocale?: string;
   };
 }
 
@@ -90,10 +76,10 @@ export interface InstallationSetupResponse {
   success: boolean;
   message: string;
   administrator: User;
-  organization: {
-    name: string;
-    email: string;
-    currency?: string;
+  settings: {
+    defaultCurrency: string;
+    defaultTimezone: string;
+    defaultLocale: string;
   };
   tokens: AuthTokens;
 }
@@ -189,36 +175,6 @@ export interface QueryUsersParams {
   search?: string;
   role?: string;
   isActive?: boolean;
-}
-
-export interface OrganizationSettings {
-  _id: string;
-  key: string;
-  name: string;
-  legalName?: string;
-  logo?: string | null;
-  email: string;
-  phone?: string;
-  website?: string;
-  address?: Address;
-  currency: string;
-  timezone: string;
-  locale: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface UpdateOrganizationPayload {
-  name?: string;
-  legalName?: string;
-  logo?: string | null;
-  email?: string;
-  phone?: string;
-  website?: string;
-  address?: Address;
-  currency?: string;
-  timezone?: string;
-  locale?: string;
 }
 
 export interface SystemSettings {

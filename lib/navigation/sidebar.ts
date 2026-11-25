@@ -1,6 +1,5 @@
 export type SidebarNavIconKey =
   | 'dashboard'
-  | 'organization'
   | 'users'
   | 'roles'
   | 'audit-logs'
@@ -32,13 +31,6 @@ export const SIDEBAR_NAV_GROUPS: SidebarNavGroup[] = [
         label: 'Dashboard',
         href: '/dashboard',
         icon: 'dashboard',
-      },
-      {
-        id: 'organization',
-        label: 'Organization',
-        href: '/organization',
-        icon: 'organization',
-        permission: 'organization.read',
       },
     ],
   },

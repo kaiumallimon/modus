@@ -663,7 +663,7 @@ export default function UsersPage() {
                     <RiInformationLine className="size-3.5" />
                   </AriaButton>
                   <Tooltip size="sm">
-                    Total registered employee and administrator accounts across the organization.
+                    Total registered employee and administrator accounts across the workspace.
                   </Tooltip>
                 </TooltipTrigger>
               </div>

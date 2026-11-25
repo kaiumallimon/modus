@@ -19,19 +19,16 @@ describe('Contracts & Schema Invariant Tests', () => {
         email: 'john@example.com',
         password: 'Password123!',
       },
-      organization: {
-        name: 'Enterprise Co',
-        email: 'contact@enterprise.com',
-        currency: 'USD',
-        timezone: 'UTC',
-        locale: 'en-US',
+      settings: {
+        defaultCurrency: 'USD',
+        defaultTimezone: 'UTC',
+        defaultLocale: 'en-US',
       },
     };
 
     assert.ok(validSetup.administrator.firstName);
     assert.ok(validSetup.administrator.password.length >= 8);
-    assert.ok(validSetup.organization.name);
-    assert.equal(validSetup.organization.currency, 'USD');
+    assert.equal(validSetup.settings.defaultCurrency, 'USD');
   });
 
   test('ForgotPassword and ResetPassword payload structures adhere to backend DTO specs', () => {

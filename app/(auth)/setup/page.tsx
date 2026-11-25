@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
-  RiBuildingLine,
+  RiSettings3Line,
   RiShieldCheckLine,
   RiCheckLine,
   RiArrowRightLine,
@@ -24,17 +24,7 @@ export default function SetupWizardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Organization Form Data
-  const [orgName, setOrgName] = useState('Modus Global');
-  const [orgLegalName, setOrgLegalName] = useState('Modus Global Inc.');
-  const [orgEmail, setOrgEmail] = useState('admin@modus.local');
-  const [orgPhone, setOrgPhone] = useState('+1-800-555-0100');
-  const [orgWebsite, setOrgWebsite] = useState('https://modus.local');
-  const [orgStreet, setOrgStreet] = useState('100 Enterprise Way');
-  const [orgCity, setOrgCity] = useState('Metropolis');
-  const [orgState, setOrgState] = useState('CA');
-  const [orgPostalCode, setOrgPostalCode] = useState('94105');
-  const [orgCountry, setOrgCountry] = useState('USA');
+  // System Regional Defaults Form Data
   const [currency, setCurrency] = useState('USD');
   const [timezone, setTimezone] = useState('UTC');
   const [locale, setLocale] = useState('en-US');
@@ -47,8 +37,8 @@ export default function SetupWizardPage() {
   const [adminPasswordConfirm, setAdminPasswordConfirm] = useState('');
 
   const validateStep1 = () => {
-    if (!orgName.trim() || !orgEmail.trim()) {
-      setErrorMsg('Organization name and email are required.');
+    if (!currency.trim() || !timezone.trim() || !locale.trim()) {
+      setErrorMsg('Default currency, timezone, and locale are required.');
       return false;
     }
     setErrorMsg('');
@@ -92,22 +82,10 @@ export default function SetupWizardPage() {
           email: adminEmail.trim(),
           password: adminPassword,
         },
-        organization: {
-          name: orgName.trim(),
-          legalName: orgLegalName.trim() || undefined,
-          email: orgEmail.trim(),
-          phone: orgPhone.trim() || undefined,
-          website: orgWebsite.trim() || undefined,
-          address: {
-            street: orgStreet.trim() || undefined,
-            city: orgCity.trim() || undefined,
-            state: orgState.trim() || undefined,
-            postalCode: orgPostalCode.trim() || undefined,
-            country: orgCountry.trim() || undefined,
-          },
-          currency: currency.toUpperCase().trim() || 'USD',
-          timezone: timezone.trim() || 'UTC',
-          locale: locale.trim() || 'en-US',
+        settings: {
+          defaultCurrency: currency.toUpperCase().trim() || 'USD',
+          defaultTimezone: timezone.trim() || 'UTC',
+          defaultLocale: locale.trim() || 'en-US',
         },
       };
 
@@ -181,97 +159,38 @@ export default function SetupWizardPage() {
           </div>
         )}
 
-        {/* Step 1: Organization Information */}
+        {/* Step 1: System Regional Defaults */}
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="text-title-3-semibold text-text-primary flex items-center gap-2">
-              <RiBuildingLine className="size-5 text-accent-600" />
-              Organization Profile
+              <RiSettings3Line className="size-5 text-accent-600" />
+              System Preferences
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Organization Name"
-                placeholder="Acme Corporation"
-                value={orgName}
-                onChange={(val) => setOrgName(val)}
-                isRequired
-              />
-              <Input
-                label="Legal Name"
-                placeholder="Acme Corporation Ltd."
-                value={orgLegalName}
-                onChange={(val) => setOrgLegalName(val)}
-              />
-              <Input
-                label="Official Email"
-                placeholder="contact@acme.com"
-                type="email"
-                value={orgEmail}
-                onChange={(val) => setOrgEmail(val)}
-                isRequired
-              />
-              <Input
-                label="Phone"
-                placeholder="+1-555-0100"
-                value={orgPhone}
-                onChange={(val) => setOrgPhone(val)}
-              />
-              <Input
-                label="Website"
-                placeholder="https://acme.com"
-                value={orgWebsite}
-                onChange={(val) => setOrgWebsite(val)}
-              />
+            <p className="text-body-medium text-text-secondary">
+              Configure default regional formatting and localization for this Modus instance.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
                 label="Currency Code"
                 placeholder="USD"
                 value={currency}
                 onChange={(val) => setCurrency(val)}
+                isRequired
               />
               <Input
                 label="Timezone"
                 placeholder="UTC"
                 value={timezone}
                 onChange={(val) => setTimezone(val)}
+                isRequired
               />
               <Input
                 label="Locale"
                 placeholder="en-US"
                 value={locale}
                 onChange={(val) => setLocale(val)}
+                isRequired
               />
-            </div>
-            <div className="pt-2 border-t border-separator-border">
-              <p className="text-caption-1-semibold text-text-secondary mb-2">Address</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-3">
-                  <Input
-                    placeholder="Street Address"
-                    value={orgStreet}
-                    onChange={(val) => setOrgStreet(val)}
-                  />
-                </div>
-                <Input
-                  placeholder="City"
-                  value={orgCity}
-                  onChange={(val) => setOrgCity(val)}
-                />
-                <Input
-                  placeholder="State / Region"
-                  value={orgState}
-                  onChange={(val) => setOrgState(val)}
-                />
-                <Input
-                  placeholder="Postal Code"
-                  value={orgPostalCode}
-                  onChange={(val) => setOrgPostalCode(val)}
-                />
-                <Input
-                  placeholder="Country"
-                  value={orgCountry}
-                  onChange={(val) => setOrgCountry(val)}
-                />
-              </div>
             </div>
           </div>
         )}
@@ -337,9 +256,9 @@ export default function SetupWizardPage() {
             <h2 className="text-title-3-semibold text-text-primary">Review & Bootstrap</h2>
             <div className="bg-background-secondary-default p-4 rounded-xl space-y-3 text-body-medium">
               <div>
-                <p className="text-caption-2-medium text-text-tertiary uppercase">Organization</p>
-                <p className="font-semibold text-text-primary">{orgName}</p>
-                <p className="text-caption-1-medium text-text-secondary">{orgEmail} · {currency} · {timezone}</p>
+                <p className="text-caption-2-medium text-text-tertiary uppercase">System Preferences</p>
+                <p className="font-semibold text-text-primary">{currency} · {timezone}</p>
+                <p className="text-caption-1-medium text-text-secondary">Locale: {locale}</p>
               </div>
               <div className="border-t border-separator-border pt-2">
                 <p className="text-caption-2-medium text-text-tertiary uppercase">Super Administrator</p>

@@ -700,7 +700,7 @@ export default function AuditLogsPage() {
                     <RiInformationLine className="size-3.5" />
                   </AriaButton>
                   <Tooltip size="sm">
-                    Governance actions across users, RBAC roles, CDN storage, organization, and settings.
+                    Governance actions across users, RBAC roles, CDN storage, and settings.
                   </Tooltip>
                 </TooltipTrigger>
               </div>

@@ -755,7 +755,7 @@ export default function RolesPage() {
                     <RiInformationLine className="size-3.5" />
                   </AriaButton>
                   <Tooltip size="sm">
-                    Combined built-in system and custom organization security roles registered in RBAC.
+                    Combined built-in system and custom workspace security roles registered in RBAC.
                   </Tooltip>
                 </TooltipTrigger>
               </div>
@@ -1491,7 +1491,7 @@ export default function RolesPage() {
                 title={role ? `Role: ${role.name}` : 'Role Details'}
                 description={
                   role
-                    ? `${role.code} · ${isSystem ? 'System Protected Role' : 'Custom Organization Role'}`
+                    ? `${role.code} · ${isSystem ? 'System Protected Role' : 'Custom Workspace Role'}`
                     : ''
                 }
               />

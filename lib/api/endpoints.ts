@@ -31,9 +31,6 @@ export const API_ENDPOINTS = {
   PERMISSIONS_GROUPED: '/permissions/grouped',
   USER_PERMISSIONS: (id: string) => `/users/${id}/permissions`,
 
-  // Organization
-  ORGANIZATION: '/organization',
-
   // Settings
   SETTINGS: '/settings',
 

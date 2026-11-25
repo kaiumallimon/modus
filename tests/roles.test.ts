@@ -30,7 +30,7 @@ const sampleRoles: RoleWithStats[] = [
     description: 'Approves billing and ledgers',
     isSystem: false,
     isActive: true,
-    permissions: ['audit.read', 'organization.read'],
+    permissions: ['audit.read', 'modules.read'],
     permissionsCount: 2,
     userCount: 0,
   },

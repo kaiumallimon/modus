@@ -10,7 +10,7 @@ describe('Sidebar Navigation Categorization Tests', () => {
     );
 
     const overviewHrefs = SIDEBAR_NAV_GROUPS[0].items.map((i) => i.href);
-    assert.deepEqual(overviewHrefs, ['/dashboard', '/organization']);
+    assert.deepEqual(overviewHrefs, ['/dashboard']);
 
     const identityHrefs = SIDEBAR_NAV_GROUPS[1].items.map((i) => i.href);
     assert.deepEqual(identityHrefs, ['/users', '/roles', '/audit-logs']);

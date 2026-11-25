@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   RiDashboardLine,
-  RiBuildingLine,
   RiUserLine,
   RiShieldUserLine,
   RiAppsLine,
@@ -52,7 +51,6 @@ import { toast } from '@/components/base/toast/toast';
 
 const NAV_ICONS: Record<SidebarNavIconKey, React.ComponentType<{ className?: string }>> = {
   dashboard: RiDashboardLine,
-  organization: RiBuildingLine,
   users: RiUserLine,
   roles: RiShieldUserLine,
   'audit-logs': RiFileHistoryLine,

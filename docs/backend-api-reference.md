@@ -74,22 +74,10 @@
     "email": "admin@modus.local",
     "password": "SuperAdminPassword123!"
   },
-  "organization": {
-    "name": "Acme Global",
-    "legalName": "Acme Global Corp Ltd.",
-    "email": "info@acme.com",
-    "phone": "+1-555-0199",
-    "website": "https://acme.com",
-    "address": {
-      "street": "123 Business Way",
-      "city": "Metropolis",
-      "state": "NY",
-      "postalCode": "10001",
-      "country": "USA"
-    },
-    "currency": "USD",
-    "timezone": "UTC",
-    "locale": "en-US"
+  "settings": {
+    "defaultCurrency": "USD",
+    "defaultTimezone": "UTC",
+    "defaultLocale": "en-US"
   }
 }
 ```
@@ -192,25 +180,19 @@
 
 ---
 
-## 6. Organization Settings
-- `GET /organization`: Get singleton profile
-- `PATCH /organization`: Update singleton profile
-
----
-
-## 7. System Settings
+## 6. System Settings
 - `GET /settings`: Get application settings
 - `PATCH /settings`: Update application settings (strictly `SUPER_ADMIN`)
 
 ---
 
-## 8. Module Registry
+## 7. Module Registry
 - `GET /modules`: List modules and activation status
 - `GET /modules/:id`: Get single module
 - `PATCH /modules/:id/activation`: Set module activation status (Core protected)
 
 ---
 
-## 9. Audit Logs
+## 8. Audit Logs
 - `GET /audit-logs`: Paginated audit logs
 - `GET /audit-logs/:id`: Single audit log details

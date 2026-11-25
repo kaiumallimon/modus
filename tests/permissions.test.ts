@@ -36,7 +36,7 @@ describe('Permissions Utility Tests', () => {
     isActive: false,
   };
 
-  const managerPermissions = ['users.read', 'organization.read', 'modules.read', 'audit.read'];
+  const managerPermissions = ['users.read', 'modules.read', 'audit.read'];
 
   test('Super Admin has unrestricted permissions', () => {
     assert.equal(hasPermission(superAdminUser, [], 'users.delete'), true);
@@ -47,7 +47,7 @@ describe('Permissions Utility Tests', () => {
 
   test('Regular user matches only granted permissions', () => {
     assert.equal(hasPermission(managerUser, managerPermissions, 'users.read'), true);
-    assert.equal(hasPermission(managerUser, managerPermissions, 'organization.read'), true);
+    assert.equal(hasPermission(managerUser, managerPermissions, 'modules.read'), true);
     assert.equal(hasPermission(managerUser, managerPermissions, 'users.create'), false);
     assert.equal(hasPermission(managerUser, managerPermissions, 'roles.delete'), false);
   });
@@ -65,7 +65,7 @@ describe('Permissions Utility Tests', () => {
 
   test('hasAllPermissions strictly requires every listed permission', () => {
     assert.equal(
-      hasAllPermissions(managerUser, managerPermissions, ['users.read', 'organization.read']),
+      hasAllPermissions(managerUser, managerPermissions, ['users.read', 'modules.read']),
       true
     );
     assert.equal(

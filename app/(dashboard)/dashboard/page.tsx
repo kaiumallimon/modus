@@ -101,18 +101,6 @@ const DEFAULT_CORE_MODULES: SystemModuleItem[] = [
     healthStatus: 'protected',
   },
   {
-    id: 'organization',
-    name: 'Organization Profile',
-    description: 'Workspace locale, currency, fiscal calendar & parameter storage',
-    version: '1.0.0',
-    category: 'Core System',
-    isCore: true,
-    isActivated: true,
-    permissionsCount: 4,
-    rating: 4.8,
-    healthStatus: 'operational',
-  },
-  {
     id: 'system-settings',
     name: 'Global System Preferences',
     description: 'Session timeout thresholds, account lockout policies & pagination defaults',

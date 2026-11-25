@@ -117,12 +117,6 @@ export const AUDIT_ACTION_META: Record<string, AuditActionMeta> = {
     color: 'rose',
     category: 'admin',
   },
-  ORGANIZATION_SETTINGS_UPDATE: {
-    value: 'ORGANIZATION_SETTINGS_UPDATE',
-    label: 'Organization Updated',
-    color: 'blue',
-    category: 'admin',
-  },
   SYSTEM_SETTINGS_UPDATE: {
     value: 'SYSTEM_SETTINGS_UPDATE',
     label: 'Settings Updated',
@@ -143,7 +137,6 @@ export const AUDIT_RESOURCE_META: Record<string, AuditResourceMeta> = {
   roles: { value: 'roles', label: 'Roles & Access', color: 'purple' },
   modules: { value: 'modules', label: 'Modules', color: 'yellow' },
   cdn: { value: 'cdn', label: 'CDN Storage', color: 'cyan' },
-  organization: { value: 'organization', label: 'Organization', color: 'soft' },
   settings: { value: 'settings', label: 'System Settings', color: 'neutral' },
   installation: { value: 'installation', label: 'Installation', color: 'orange' },
 };

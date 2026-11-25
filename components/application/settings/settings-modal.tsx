@@ -4,7 +4,6 @@ import { useDirection } from "@/components/foundations/direction/direction";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
-  RiBuildingLine,
   RiCheckboxCircleFill,
   RiCloseLine,
   RiPaletteLine,
@@ -16,7 +15,6 @@ import { cx } from "@/utils/cx";
 import { useAuth } from "@/providers/auth-provider";
 import { SettingsGeneral } from "./settings-general";
 import { SettingsProfile } from "./settings-profile";
-import { SettingsOrganization } from "./settings-organization";
 import { SettingsAppearance } from "./settings-appearance";
 import { SettingsAccess } from "./settings-access";
 import { SettingsStorage } from "./settings-storage";
@@ -24,7 +22,6 @@ import { SettingsTools } from "./settings-tools";
 
 export type SettingsPage =
   | "profile"
-  | "organization"
   | "general"
   | "appearance"
   | "access"
@@ -66,14 +63,8 @@ const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
     ],
   },
   {
-    label: "Organization & System",
+    label: "System",
     items: [
-      {
-        label: "Organization",
-        icon: RiBuildingLine,
-        page: "organization",
-        superAdminOnly: true,
-      },
       { label: "System Preferences", icon: RiSettings6Line, page: "general" },
       { label: "Appearance", icon: RiPaletteLine, page: "appearance" },
     ],
@@ -82,7 +73,6 @@ const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
 
 const PAGE_TITLES: Record<SettingsPage, string> = {
   profile: "Profile Settings",
-  organization: "Organization Settings",
   general: "System Preferences",
   appearance: "Appearance Settings",
   access: "My Role & Permissions",
@@ -148,13 +138,9 @@ export function SettingsModal({
   // Reset page when reopened
   useEffect(() => {
     if (isOpen) {
-      if (defaultPage === "organization" && !isSuperAdmin) {
-        setPage("profile");
-      } else {
-        setPage(defaultPage);
-      }
+      setPage(defaultPage);
     }
-  }, [isOpen, defaultPage, isSuperAdmin]);
+  }, [isOpen, defaultPage]);
 
   // Close on Escape
   useEffect(() => {
@@ -314,8 +300,6 @@ export function SettingsModal({
                 >
                   {page === "profile" ? (
                     <SettingsProfile onSaved={showSavedToast} />
-                  ) : page === "organization" ? (
-                    <SettingsOrganization onSaved={showSavedToast} />
                   ) : page === "general" ? (
                     <SettingsGeneral planArtSrc={planArtSrc} onSaved={showSavedToast} />
                   ) : page === "appearance" ? (
