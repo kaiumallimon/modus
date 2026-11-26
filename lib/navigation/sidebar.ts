@@ -8,7 +8,11 @@ export type SidebarNavIconKey =
   | 'inventory-overview'
   | 'inventory-catalog'
   | 'inventory-warehouses'
-  | 'inventory-stock';
+  | 'inventory-stock'
+  | 'procurement-overview'
+  | 'procurement-suppliers'
+  | 'procurement-orders'
+  | 'procurement-receipts';
 
 export interface SidebarNavItem {
   id: string;
@@ -25,6 +29,7 @@ export interface SidebarNavGroup {
   id: string;
   label: string;
   moduleId?: string;
+  requiredDependencies?: string[];
   items: SidebarNavItem[];
 }
 
@@ -138,14 +143,62 @@ export const INVENTORY_NAV_GROUP: SidebarNavGroup = {
   ],
 };
 
+export const PROCUREMENT_NAV_GROUP: SidebarNavGroup = {
+  id: 'procurement',
+  label: 'Procurement',
+  moduleId: 'procurement',
+  requiredDependencies: ['inventory'],
+  items: [
+    {
+      id: 'procurement-overview',
+      label: 'Overview',
+      href: '/procurement',
+      icon: 'procurement-overview',
+      exactMatch: true,
+      anyPermissions: [
+        'procurement.dashboard.read',
+        'procurement.suppliers.read',
+        'procurement.purchase-orders.read',
+        'procurement.goods-receipts.read',
+        'procurement.supplier-transactions.read',
+      ],
+    },
+    {
+      id: 'procurement-suppliers',
+      label: 'Suppliers',
+      href: '/procurement/suppliers',
+      icon: 'procurement-suppliers',
+      anyPermissions: [
+        'procurement.suppliers.read',
+        'procurement.supplier-transactions.read',
+      ],
+    },
+    {
+      id: 'procurement-orders',
+      label: 'Purchase Orders',
+      href: '/procurement/purchase-orders',
+      icon: 'procurement-orders',
+      permission: 'procurement.purchase-orders.read',
+    },
+    {
+      id: 'procurement-receipts',
+      label: 'Goods Receipts',
+      href: '/procurement/goods-receipts',
+      icon: 'procurement-receipts',
+      permission: 'procurement.goods-receipts.read',
+    },
+  ],
+};
+
 export const ALL_SIDEBAR_NAV_GROUPS: SidebarNavGroup[] = [
   ...SIDEBAR_NAV_GROUPS,
   INVENTORY_NAV_GROUP,
+  PROCUREMENT_NAV_GROUP,
 ];
 
 /**
- * Filters categorized navigation groups by module activation, user permissions, and an optional
- * search query, automatically omitting categories that end up with zero visible items.
+ * Filters categorized navigation groups by module activation, module dependencies,
+ * user permissions, and an optional search query, automatically omitting empty groups.
  */
 export function filterSidebarGroups(
   groups: SidebarNavGroup[],
@@ -156,7 +209,17 @@ export function filterSidebarGroups(
   const query = searchQuery.toLowerCase().trim();
 
   return groups
-    .filter((group) => !group.moduleId || !isModuleActive || isModuleActive(group.moduleId))
+    .filter((group) => {
+      if (!isModuleActive) return true;
+      if (group.moduleId && !isModuleActive(group.moduleId)) return false;
+      if (
+        group.requiredDependencies &&
+        group.requiredDependencies.some((dep) => !isModuleActive(dep))
+      ) {
+        return false;
+      }
+      return true;
+    })
     .map((group) => {
       const groupMatches = query.length > 0 && group.label.toLowerCase().includes(query);
       const visibleItems = group.items.filter((item) => {

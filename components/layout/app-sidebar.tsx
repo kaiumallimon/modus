@@ -28,6 +28,10 @@ import {
   RiPriceTag3Line,
   RiBuilding2Line,
   RiStackLine,
+  RiShoppingBag3Line,
+  RiTruckLine,
+  RiFileList3Line,
+  RiInboxArchiveLine,
 } from '@remixicon/react';
 import {
   Button as AriaButton,
@@ -64,6 +68,10 @@ const NAV_ICONS: Record<SidebarNavIconKey, React.ComponentType<{ className?: str
   'inventory-catalog': RiPriceTag3Line,
   'inventory-warehouses': RiBuilding2Line,
   'inventory-stock': RiStackLine,
+  'procurement-overview': RiShoppingBag3Line,
+  'procurement-suppliers': RiTruckLine,
+  'procurement-orders': RiFileList3Line,
+  'procurement-receipts': RiInboxArchiveLine,
 };
 
 interface SidebarNavLinkProps {
@@ -182,7 +190,7 @@ export function AppSidebar({ mode = 'desktop', onNavigate }: AppSidebarProps) {
           try {
             const modules = await apiClient<ModuleRegistration[]>(API_ENDPOINTS.MODULES);
             const businessModules = modules.filter(
-              (m) => m.isActivated && !m.isCore && m.id !== 'inventory'
+              (m) => m.isActivated && !m.isCore && m.id !== 'inventory' && m.id !== 'procurement'
             );
             setActiveModules(businessModules);
           } catch {

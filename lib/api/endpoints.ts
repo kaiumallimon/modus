@@ -64,6 +64,28 @@ export const API_ENDPOINTS = {
   INVENTORY_MOVEMENTS: '/inventory/movements',
   INVENTORY_MOVEMENT_BY_ID: (id: string) => `/inventory/movements/${id}`,
 
+  // Procurement
+  PROCUREMENT_DASHBOARD: '/procurement/dashboard',
+  PROCUREMENT_SUPPLIERS: '/procurement/suppliers',
+  PROCUREMENT_SUPPLIER_BY_ID: (id: string) => `/procurement/suppliers/${id}`,
+  PROCUREMENT_SUPPLIER_DEACTIVATE: (id: string) =>
+    `/procurement/suppliers/${id}/deactivate`,
+  PROCUREMENT_SUPPLIER_STATEMENT: (id: string) =>
+    `/procurement/suppliers/${id}/statement`,
+  PROCUREMENT_PURCHASE_ORDERS: '/procurement/purchase-orders',
+  PROCUREMENT_PURCHASE_ORDER_BY_ID: (id: string) =>
+    `/procurement/purchase-orders/${id}`,
+  PROCUREMENT_PURCHASE_ORDER_SUBMIT: (id: string) =>
+    `/procurement/purchase-orders/${id}/submit`,
+  PROCUREMENT_PURCHASE_ORDER_CANCEL: (id: string) =>
+    `/procurement/purchase-orders/${id}/cancel`,
+  PROCUREMENT_GOODS_RECEIPTS: '/procurement/goods-receipts',
+  PROCUREMENT_GOODS_RECEIPT_BY_ID: (id: string) =>
+    `/procurement/goods-receipts/${id}`,
+  PROCUREMENT_GOODS_RECEIPT_CONFIRM: (id: string) =>
+    `/procurement/goods-receipts/${id}/confirm`,
+  PROCUREMENT_SUPPLIER_TRANSACTIONS: '/procurement/supplier-transactions',
+
   // Audit Logs
   AUDIT_LOGS: '/audit-logs',
   AUDIT_LOG_BY_ID: (id: string) => `/audit-logs/${id}`,

@@ -181,7 +181,8 @@ export type StockMovementType =
   | 'ADJUSTMENT_INCREASE'
   | 'ADJUSTMENT_DECREASE'
   | 'TRANSFER_IN'
-  | 'TRANSFER_OUT';
+  | 'TRANSFER_OUT'
+  | 'PURCHASE_RECEIPT';
 
 export interface StockMovement {
   _id: string;
@@ -200,7 +201,7 @@ export interface StockMovement {
   quantityChange: number;
   previousBalance: number;
   resultingBalance: number;
-  referenceType: 'ADJUSTMENT' | 'TRANSFER';
+  referenceType: 'ADJUSTMENT' | 'TRANSFER' | 'GOODS_RECEIPT';
   referenceId: string;
   referenceNumber: string;
   description: string;
