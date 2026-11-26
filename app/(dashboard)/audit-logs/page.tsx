@@ -1187,8 +1187,8 @@ export default function AuditLogsPage() {
       )}
 
       {/* 6. Pagination Footer (BoardUI Select & Pagination matching Users page) */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2 px-1">
-        <div className="flex items-center gap-3 text-body-2-medium text-text-secondary">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 py-2 px-1">
+        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3 text-body-2-medium text-text-secondary">
           <span>Rows per page</span>
           <Select
             aria-label="Rows per page"
@@ -1220,7 +1220,7 @@ export default function AuditLogsPage() {
           </span>
         </div>
 
-        <div className="flex items-center">
+        <div className="w-full lg:w-auto min-w-0 max-w-full flex items-center justify-center">
           <Pagination
             page={page}
             totalPages={totalPages}

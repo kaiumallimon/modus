@@ -2,7 +2,7 @@
 
 import { useTemplateCopy } from "@/components/foundations/template-copy/template-copy";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { RiArrowLeftLine, RiArrowRightLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
@@ -71,25 +71,26 @@ function paginationRange(
 const cell = "flex size-8 shrink-0 items-center justify-center rounded-lg text-body-medium";
 
 /** Below this nav width, Previous/Next drop their labels and siblingCount
- *  clamps to 0 — the full-label, full-sibling layout starts clipping
- *  somewhere around 380–420px depending on totalPages' digit count. */
-const COMPACT_WIDTH = 420;
+ *  clamps to 0 — the full-label, full-sibling layout can exceed ~440px when
+ *  totalPages reaches two or three digits. */
+const COMPACT_WIDTH = 460;
 
 function useIsCompact() {
-  const ref = useRef<HTMLElement>(null);
+  const [el, setEl] = useState<HTMLElement | null>(null);
   const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
-    const el = ref.current;
     if (!el) return;
+    const update = (width: number) => setIsCompact(width < COMPACT_WIDTH);
+    update(el.getBoundingClientRect().width);
     const observer = new ResizeObserver(([entry]) => {
-      setIsCompact(entry.contentRect.width < COMPACT_WIDTH);
+      update(entry.contentRect.width);
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [el]);
 
-  return [ref, isCompact] as const;
+  return [setEl, isCompact] as const;
 }
 
 export function Pagination({
@@ -111,7 +112,7 @@ export function Pagination({
     <nav
       ref={navRef}
       aria-label={ariaLabel}
-      className={cx("flex w-full items-center justify-between gap-2", className)}
+      className={cx("flex w-full max-w-full min-w-0 items-center justify-between gap-2", className)}
     >
       <Button
         variant="secondary"

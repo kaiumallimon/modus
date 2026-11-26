@@ -27,8 +27,8 @@ export function InventoryPaginationFooter({
   const end = Math.min(page * limit, total);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-separator-border px-4 py-3">
-      <div className="flex items-center gap-3 text-caption-1-medium text-text-secondary">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-t border-separator-border px-4 py-3">
+      <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3 text-caption-1-medium text-text-secondary">
         <span>
           Showing <strong className="text-text-primary tabular-nums">{start}–{end}</strong> of{' '}
           <strong className="text-text-primary tabular-nums">{total}</strong> {itemLabel}
@@ -54,11 +54,13 @@ export function InventoryPaginationFooter({
         </Select>
       </div>
 
-      <Pagination
-        page={page}
-        totalPages={Math.max(1, totalPages)}
-        onChange={onPageChange}
-      />
+      <div className="w-full lg:w-auto min-w-0 max-w-full flex items-center justify-center">
+        <Pagination
+          page={page}
+          totalPages={Math.max(1, totalPages)}
+          onChange={onPageChange}
+        />
+      </div>
     </div>
   );
 }

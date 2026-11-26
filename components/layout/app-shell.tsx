@@ -18,14 +18,14 @@ export function AppShell({ children }: AppShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="fixed inset-0 flex flex-col md:flex-row h-full w-full overflow-hidden bg-background-primary-default text-text-primary antialiased">
+    <div className="fixed inset-0 flex flex-col md:flex-row h-dvh w-full overflow-hidden bg-background-primary-default text-text-primary antialiased">
       {/* Desktop / Tablet Collapsible Sidebar */}
       <div className="hidden md:flex h-full shrink-0">
         <AppSidebar mode="desktop" />
       </div>
 
-      {/* Mobile Top Header Bar */}
-      <header className="flex md:hidden items-center justify-between h-14 px-4 border-b border-border-button-default bg-background-primary-default shrink-0 z-20">
+      {/* Mobile Top Header Bar (Always pinned at top on mobile) */}
+      <header className="fixed top-0 inset-x-0 z-30 flex md:hidden items-center justify-between h-14 px-4 border-b border-border-button-default bg-background-primary-default/95 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             type="button"
@@ -58,6 +58,9 @@ export function AppShell({ children }: AppShellProps) {
         <ThemeToggle label={false} />
       </header>
 
+      {/* Spacer for pinned mobile header */}
+      <div className="h-14 shrink-0 md:hidden" aria-hidden />
+
       {/* Mobile Sheet Sidebar (Fixed / Non-Collapsible) */}
       <Drawer
         placement="start"
@@ -71,9 +74,9 @@ export function AppShell({ children }: AppShellProps) {
       </Drawer>
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-background-primary-default">
-        <main className="flex-1 h-full overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
-          <div className="w-full space-y-6">{children}</div>
+      <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden bg-background-primary-default">
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+          <div className="w-full min-w-0 space-y-6">{children}</div>
         </main>
       </div>
     </div>
