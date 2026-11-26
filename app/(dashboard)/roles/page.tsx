@@ -1640,7 +1640,7 @@ export default function RolesPage() {
       {/* 8. Create Custom Role Modal */}
       <Modal size="lg" isOpen={createModalOpen} onOpenChange={setCreateModalOpen}>
         {({ close }) => (
-          <form onSubmit={handleCreateSubmit}>
+          <form onSubmit={handleCreateSubmit} className="flex min-h-0 flex-1 flex-col gap-2">
             <ModalHeader
               title="Create Custom Role"
               description="Define a new RBAC role and assign module-level capabilities."
@@ -1715,7 +1715,7 @@ export default function RolesPage() {
       {/* 9. Edit Role Modal */}
       <Modal size="lg" isOpen={editModalOpen} onOpenChange={setEditModalOpen}>
         {({ close }) => (
-          <form onSubmit={handleEditSubmit}>
+          <form onSubmit={handleEditSubmit} className="flex min-h-0 flex-1 flex-col gap-2">
             <ModalHeader
               title={`Edit Role: ${selectedRole?.name}`}
               description="Update display metadata and granted RBAC permissions."

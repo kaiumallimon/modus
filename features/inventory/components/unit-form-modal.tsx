@@ -86,7 +86,7 @@ export function UnitFormModal({
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
       {({ close }) => (
-        <form onSubmit={(e) => handleSubmit(e, close)}>
+        <form onSubmit={(e) => handleSubmit(e, close)} className="flex min-h-0 flex-1 flex-col gap-2">
           <ModalHeader
             title={editingUnit ? 'Edit Unit of Measurement' : 'Add Unit of Measurement'}
             description="Define standard quantity units assigned to products across warehouses."

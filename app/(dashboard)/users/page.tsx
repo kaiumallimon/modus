@@ -1174,7 +1174,7 @@ export default function UsersPage() {
       {/* Create User Modal */}
       <Modal isOpen={createModalOpen} onOpenChange={setCreateModalOpen}>
         {({ close }) => (
-          <form onSubmit={handleCreateSubmit}>
+          <form onSubmit={handleCreateSubmit} className="flex min-h-0 flex-1 flex-col gap-2">
             <ModalHeader
               title="Add New User"
               description="Create a team member account with credentials dispatched via secure email."
@@ -1243,7 +1243,7 @@ export default function UsersPage() {
       {/* Edit User Modal */}
       <Modal isOpen={editModalOpen} onOpenChange={setEditModalOpen}>
         {({ close }) => (
-          <form onSubmit={handleEditSubmit}>
+          <form onSubmit={handleEditSubmit} className="flex min-h-0 flex-1 flex-col gap-2">
             <ModalHeader
               title={`Edit User: ${selectedUser?.firstName} ${selectedUser?.lastName}`}
               description="Update personal information or modify role permissions."
@@ -1399,7 +1399,7 @@ export default function UsersPage() {
           }).length;
 
           return (
-            <form onSubmit={handleBatchRoleSubmit}>
+            <form onSubmit={handleBatchRoleSubmit} className="flex min-h-0 flex-1 flex-col gap-2">
               <ModalHeader
                 title={`Change Role for ${selectedCount} User${selectedCount === 1 ? '' : 's'}`}
                 description="Batch update the security role and access permissions for selected users."

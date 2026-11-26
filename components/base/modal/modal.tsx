@@ -252,7 +252,7 @@ export function ModalHeader({
   }, [hasDescription, setDescribed]);
 
   return (
-    <div className={cx("flex shrink-0 items-start gap-3 px-4", className)}>
+    <div className={cx("flex shrink-0 items-start gap-3 px-4 pb-1.5", className)}>
       <div className="flex min-w-0 flex-1 flex-col">
         {Icon ? (
           <span className={cx("mb-3 flex size-10 shrink-0 items-center justify-center rounded-full", styles.icon[tone])}>
@@ -304,7 +304,7 @@ export function ModalBody({ className, children }: ModalBodyProps) {
       <div
         onScroll={fade.onScroll}
         className={cx(
-          "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-1 text-body-regular text-text-secondary group-last/body:pb-4",
+          "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-2.5 pb-1 text-body-regular text-text-secondary group-last/body:pb-4",
           className,
         )}
       >

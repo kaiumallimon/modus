@@ -1222,7 +1222,7 @@ export default function CdnExplorerPage() {
       {/* Upload Asset Modal */}
       <Modal isOpen={uploadModalOpen} onOpenChange={setUploadModalOpen}>
         {({ close }) => (
-          <form onSubmit={handleUploadSubmit}>
+          <form onSubmit={handleUploadSubmit} className="flex min-h-0 flex-1 flex-col gap-2">
             <ModalHeader
               title="Upload Asset to Cloudflare CDN"
               description="Deploy files to the R2 bucket with global CDN distribution and zero egress fees."

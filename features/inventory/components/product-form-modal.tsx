@@ -173,7 +173,7 @@ export function ProductFormModal({
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="xl">
       {({ close }) => (
-        <form onSubmit={(e) => handleSubmit(e, close)}>
+        <form onSubmit={(e) => handleSubmit(e, close)} className="flex min-h-0 flex-1 flex-col gap-2">
           <ModalHeader
             title={editingProduct ? `Edit Product — ${editingProduct.sku}` : 'Create New Product'}
             description="Define product catalog attributes, base unit, pricing, and stock alert thresholds. Stock quantities are controlled through Adjustments & Transfers."

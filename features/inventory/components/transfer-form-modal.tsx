@@ -155,7 +155,7 @@ export function TransferFormModal({
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="xl">
       {({ close }) => (
-        <form onSubmit={(e) => handleSubmit(e, close)}>
+        <form onSubmit={(e) => handleSubmit(e, close)} className="flex min-h-0 flex-1 flex-col gap-2">
           <ModalHeader
             title="Create Stock Transfer"
             description="Prepare an inter-warehouse stock transfer. Available source stock is validated before creation and transferred atomically upon confirmation."

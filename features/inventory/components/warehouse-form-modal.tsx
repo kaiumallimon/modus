@@ -114,7 +114,7 @@ export function WarehouseFormModal({
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
       {({ close }) => (
-        <form onSubmit={(e) => handleSubmit(e, close)}>
+        <form onSubmit={(e) => handleSubmit(e, close)} className="flex min-h-0 flex-1 flex-col gap-2">
           <ModalHeader
             title={editingWarehouse ? 'Edit Warehouse' : 'Register Warehouse'}
             description="Configure storage facility details for per-warehouse stock tracking."

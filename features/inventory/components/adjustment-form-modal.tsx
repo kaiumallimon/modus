@@ -139,7 +139,7 @@ export function AdjustmentFormModal({
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
       {({ close }) => (
-        <form onSubmit={(e) => handleSubmit(e, close)}>
+        <form onSubmit={(e) => handleSubmit(e, close)} className="flex min-h-0 flex-1 flex-col gap-2">
           <ModalHeader
             title="New Stock Adjustment"
             description="Record opening stock, manual increases, or write-offs. Authoritative balances and ledger entries are computed atomically on the server."

@@ -97,7 +97,7 @@ export function CategoryFormModal({
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
       {({ close }) => (
-        <form onSubmit={(e) => handleSubmit(e, close)}>
+        <form onSubmit={(e) => handleSubmit(e, close)} className="flex min-h-0 flex-1 flex-col gap-2">
           <ModalHeader
             title={editingCategory ? 'Edit Category' : 'Create Category'}
             description="Organize inventory products into clear searchable groups."
