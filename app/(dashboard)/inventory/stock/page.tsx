@@ -9,7 +9,7 @@ import {
   RiStackLine,
 } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { PageShellSkeleton } from '@/components/application/loading/page-skeletons';
 import {
   SegmentedControl,
   SegmentedControlItem,
@@ -205,13 +205,7 @@ function InventoryStockContent() {
 
 export default function InventoryStockPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-64 items-center justify-center">
-          <Spinner size="md" className="text-accent-600" />
-        </div>
-      }
-    >
+    <Suspense fallback={<PageShellSkeleton showStats={false} />}>
       <InventoryStockContent />
     </Suspense>
   );

@@ -205,7 +205,7 @@ export function MovementDetailDrawer({
                       {getRefName(movement.warehouseId)}
                     </p>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                     <div className="rounded-xl border border-separator-border bg-background-primary-default p-2.5">
                       <p className="text-caption-2-medium text-text-tertiary">Previous</p>
                       <p className="text-body-medium font-mono tabular-nums text-text-primary">

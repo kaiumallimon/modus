@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { RiBox3Line, RiLockLine, RiAppsLine } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { PageShellSkeleton } from '@/components/application/loading/page-skeletons';
 import { Button } from '@/components/base/buttons/button';
 
 export interface InventoryModuleGateProps {
@@ -34,11 +34,7 @@ export function InventoryModuleGate({
   } = useAuth();
 
   if (authLoading || (!modulesLoaded && user)) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Spinner size="md" className="text-accent-600" />
-      </div>
-    );
+    return <PageShellSkeleton showStats={false} />;
   }
 
   if (modulesLoaded && !isModuleActive('inventory')) {

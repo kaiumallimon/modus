@@ -13,7 +13,7 @@ import { Button } from '@/components/base/buttons/button';
 import { IconButton } from '@/components/base/buttons/icon-button';
 import { Chip } from '@/components/base/badges/chip';
 import { Select, SelectItem } from '@/components/base/select/select';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { TableRowsSkeleton } from '@/components/application/loading/page-skeletons';
 import { AlertDialog } from '@/components/base/modal/modal';
 import {
   Table,
@@ -259,9 +259,7 @@ export function TransfersTab({ onCountChange }: TransfersTabProps) {
 
       <div className="border border-border-button-default rounded-2xl bg-background-primary-default shadow-xs overflow-hidden">
         {!hasLoaded && loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Spinner size="md" className="text-accent-600" />
-          </div>
+          <TableRowsSkeleton rows={6} columns={5} />
         ) : transfers.length === 0 ? (
           <InventoryEmptyState
             icon={RiArrowLeftRightLine}

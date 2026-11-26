@@ -16,7 +16,7 @@ import {
 import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/base/buttons/button';
 import { Chip } from '@/components/base/badges/chip';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { InventoryOverviewSkeleton } from '@/components/application/loading/page-skeletons';
 import { toast } from '@/components/base/toast/toast';
 import { InventoryModuleGate } from '@/features/inventory/components/inventory-module-gate';
 import { InventoryPageHeader } from '@/features/inventory/components/inventory-page-header';
@@ -179,9 +179,7 @@ export default function InventoryOverviewPage() {
         />
 
         {loading && !summary ? (
-          <div className="flex h-64 items-center justify-center">
-            <Spinner size="md" className="text-accent-600" />
-          </div>
+          <InventoryOverviewSkeleton />
         ) : (
           <>
             {/* Segmented KPI Metrics Row */}

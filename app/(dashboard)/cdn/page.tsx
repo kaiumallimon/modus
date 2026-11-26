@@ -65,7 +65,11 @@ import { Input } from '@/components/base/input/input';
 import { Chip, ChipColor } from '@/components/base/badges/chip';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Modal, ModalHeader, ModalBody, ModalFooter, AlertDialog } from '@/components/base/modal/modal';
-import { Spinner } from '@/components/base/spinner/spinner';
+import {
+  CardGridSkeleton,
+  PageShellSkeleton,
+  TableRowsSkeleton,
+} from '@/components/application/loading/page-skeletons';
 import { toast } from '@/components/base/toast/toast';
 import { Select, SelectItem } from '@/components/base/select/select';
 import { Tooltip, TooltipTrigger } from '@/components/base/tooltip/tooltip';
@@ -486,11 +490,7 @@ export default function CdnExplorerPage() {
   const pathParts = currentPrefix.split('/').filter(Boolean);
 
   if (authLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <PageShellSkeleton statsCount={4} view={viewMode === 'grid' ? 'cards' : 'table'} />;
   }
 
   if (!canRead) {
@@ -522,7 +522,7 @@ export default function CdnExplorerPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5">
             <Button
               variant="secondary"
               size="medium"
@@ -755,7 +755,7 @@ export default function CdnExplorerPage() {
           {/* Right Toolbar: Search, Format Filter, Sort, Layout Switcher */}
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* Search Input */}
-            <div className="w-56">
+            <div className="w-full sm:w-56">
               <Input
                 placeholder="Search assets..."
                 value={search}
@@ -941,9 +941,11 @@ export default function CdnExplorerPage() {
 
         {/* Content View: Table or Grid */}
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Spinner size="md" />
-          </div>
+          viewMode === 'grid' ? (
+            <CardGridSkeleton count={6} className="p-4" />
+          ) : (
+            <TableRowsSkeleton rows={6} columns={5} showCheckbox />
+          )
         ) : filteredObjects.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
             <div className="size-12 rounded-full bg-background-secondary-default border border-border-button-default flex items-center justify-center text-text-tertiary mb-3">
@@ -1162,7 +1164,7 @@ export default function CdnExplorerPage() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="p-3 rounded-xl border border-border-button-default bg-background-secondary-default/50">
                       <span className="text-caption-1-medium text-text-tertiary block">File Size</span>
                       <span className="text-body-2-medium font-mono text-text-primary">{previewObject.formattedSize}</span>

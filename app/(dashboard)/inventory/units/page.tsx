@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { PageShellSkeleton } from '@/components/application/loading/page-skeletons';
 
 export default function LegacyUnitsRedirectPage() {
   const router = useRouter();
@@ -10,9 +10,5 @@ export default function LegacyUnitsRedirectPage() {
     router.replace('/inventory/catalog?tab=units');
   }, [router]);
 
-  return (
-    <div className="flex h-64 items-center justify-center">
-      <Spinner size="md" className="text-accent-600" />
-    </div>
-  );
+  return <PageShellSkeleton showStats={false} />;
 }

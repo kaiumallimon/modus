@@ -10,7 +10,7 @@ import {
 import { useAuth } from '@/providers/auth-provider';
 import { Chip } from '@/components/base/badges/chip';
 import { Select, SelectItem } from '@/components/base/select/select';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { TableRowsSkeleton } from '@/components/application/loading/page-skeletons';
 import {
   Table,
   TableBody,
@@ -273,9 +273,7 @@ export function AdjustmentsTab({ onCountChange }: AdjustmentsTabProps) {
 
       <div className="border border-border-button-default rounded-2xl bg-background-primary-default shadow-xs overflow-hidden">
         {!hasLoaded && loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Spinner size="md" className="text-accent-600" />
-          </div>
+          <TableRowsSkeleton rows={6} columns={5} />
         ) : adjustments.length === 0 ? (
           <InventoryEmptyState
             icon={RiEqualizerLine}

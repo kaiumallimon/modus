@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/base/buttons/button';
 import { Chip } from '@/components/base/badges/chip';
 import { Divider } from '@/components/base/divider/divider';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { DetailDrawerSkeleton } from '@/components/application/loading/page-skeletons';
 import { inventoryApi } from '../api/inventory-api';
 import {
   formatCurrency,
@@ -80,9 +80,7 @@ export function ProductDetailDrawer({
           />
           <DrawerBody>
             {loading ? (
-              <div className="flex h-48 items-center justify-center">
-                <Spinner size="md" className="text-accent-600" />
-              </div>
+              <DetailDrawerSkeleton />
             ) : !product ? (
               <p className="text-body-regular text-text-secondary">
                 Unable to load product details.

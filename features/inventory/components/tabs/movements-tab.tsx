@@ -15,7 +15,7 @@ import {
   DateRangePicker,
   type DateRangeValue,
 } from '@/components/base/date-picker/date-range-picker';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { TableRowsSkeleton } from '@/components/application/loading/page-skeletons';
 import {
   Table,
   TableBody,
@@ -352,9 +352,7 @@ export function MovementsTab({
 
       <div className="border border-border-button-default rounded-2xl bg-background-primary-default shadow-xs overflow-hidden">
         {!hasLoaded && loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Spinner size="md" className="text-accent-600" />
-          </div>
+          <TableRowsSkeleton rows={6} columns={6} />
         ) : movements.length === 0 ? (
           <InventoryEmptyState
             icon={RiHistoryLine}

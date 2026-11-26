@@ -108,7 +108,7 @@ export function InventoryToolbar({
             <AriaPopover
               placement="bottom start"
               offset={8}
-              className="z-50 w-80 rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-2xl outline-none"
+              className="z-50 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-2xl outline-none"
             >
               <AriaDialog className="outline-none flex flex-col gap-3.5">
                 <div className="flex items-center justify-between border-b border-separator-border pb-2.5">

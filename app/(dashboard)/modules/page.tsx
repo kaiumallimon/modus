@@ -12,7 +12,7 @@ import { ModuleRegistration, Role } from '@/lib/api/types';
 import { Chip } from '@/components/base/badges/chip';
 import { Switch } from '@/components/base/switch/switch';
 import { AlertDialog } from '@/components/base/modal/modal';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { CardGridSkeleton } from '@/components/application/loading/page-skeletons';
 import { toast } from '@/components/base/toast/toast';
 
 export default function ModulesPage() {
@@ -100,9 +100,7 @@ export default function ModulesPage() {
       </div>
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <Spinner size="md" className="text-accent-600" />
-        </div>
+        <CardGridSkeleton count={6} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {modules.map((mod) => (

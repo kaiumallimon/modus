@@ -4,7 +4,7 @@ import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'reac
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RiFolderLine, RiPriceTag3Line, RiRulerLine } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { PageShellSkeleton } from '@/components/application/loading/page-skeletons';
 import {
   SegmentedControl,
   SegmentedControlItem,
@@ -162,13 +162,7 @@ function InventoryCatalogContent() {
 
 export default function InventoryCatalogPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-64 items-center justify-center">
-          <Spinner size="md" className="text-accent-600" />
-        </div>
-      }
-    >
+    <Suspense fallback={<PageShellSkeleton showStats={false} />}>
       <InventoryCatalogContent />
     </Suspense>
   );

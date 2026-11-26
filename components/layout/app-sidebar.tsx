@@ -73,6 +73,7 @@ interface SidebarNavLinkProps {
   isActive: boolean;
   collapsed: boolean;
   badge?: number | string;
+  onClick?: () => void;
 }
 
 function SidebarNavLink({
@@ -82,10 +83,12 @@ function SidebarNavLink({
   isActive,
   collapsed,
   badge,
+  onClick,
 }: SidebarNavLinkProps) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={cx(
         'group relative flex items-center justify-between rounded-lg transition-colors',
         collapsed ? 'size-10 justify-center mx-auto' : 'px-3 py-2 text-body-2-medium',
@@ -125,7 +128,12 @@ function SidebarNavLink({
   );
 }
 
-export function AppSidebar() {
+export interface AppSidebarProps {
+  mode?: 'desktop' | 'mobile-sheet';
+  onNavigate?: () => void;
+}
+
+export function AppSidebar({ mode = 'desktop', onNavigate }: AppSidebarProps) {
   const pathname = usePathname();
   const { user, logout, hasPermission, isModuleActive } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
@@ -134,13 +142,20 @@ export function AppSidebar() {
   const [auditCount, setAuditCount] = useState<number | undefined>(undefined);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollFade = useScrollFade();
 
-  // Keyboard shortcut: press 'f' outside text inputs to focus sidebar Find search
+  const isSheet = mode === 'mobile-sheet';
+  const isCollapsed = isSheet ? false : collapsed;
+
+  // Keyboard shortcut: press 'f' outside text inputs to focus visible sidebar Find search
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const rects = sidebarRef.current?.getClientRects();
+      if (!rects || rects.length === 0) return;
+
       const target = event.target as HTMLElement | null;
       const isEditable =
         target?.tagName === 'INPUT' ||
@@ -150,14 +165,14 @@ export function AppSidebar() {
 
       if (!isEditable && event.key.toLowerCase() === 'f') {
         event.preventDefault();
-        if (collapsed) setCollapsed(false);
+        if (isCollapsed) setCollapsed(false);
         setTimeout(() => searchInputRef.current?.focus(), 0);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [collapsed]);
+  }, [isCollapsed]);
 
   useEffect(() => {
     async function loadBackendData() {
@@ -266,7 +281,10 @@ export function AppSidebar() {
       {/* Home Page Link */}
       <Link
         href="/dashboard"
-        onClick={close}
+        onClick={() => {
+          close();
+          onNavigate?.();
+        }}
         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-body-2-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors text-start"
       >
         <span>Home Page</span>
@@ -327,13 +345,17 @@ export function AppSidebar() {
   return (
     <>
       <aside
+        ref={sidebarRef}
         className={cx(
-          'relative flex flex-col bg-background-primary-default text-text-primary transition-all duration-200 ease-in-out shrink-0 z-30 select-none border-r border-border-button-default h-full shadow-2xs',
-          collapsed ? 'w-18' : 'w-64'
+          'relative flex flex-col bg-background-primary-default text-text-primary transition-all duration-200 ease-in-out shrink-0 z-30 select-none h-full',
+          isSheet
+            ? 'w-full border-r-0 shadow-none rounded-3xl overflow-hidden'
+            : 'border-r border-border-button-default shadow-2xs',
+          isCollapsed ? 'w-18' : !isSheet && 'w-64'
         )}
       >
         {/* Workspace Brand / Team Header (Vercel Style) */}
-        {collapsed ? (
+        {isCollapsed ? (
           <div className="flex items-center justify-center h-14 border-b border-border-button-default px-2 shrink-0">
             <button
               onClick={() => setCollapsed(false)}
@@ -360,6 +382,7 @@ export function AppSidebar() {
           <div className="flex items-center justify-between h-14 px-3.5 border-b border-border-button-default shrink-0">
             <Link
               href="/dashboard"
+              onClick={onNavigate}
               className="flex items-center gap-2.5 overflow-hidden min-w-0 rounded-lg p-1 -ms-1 hover:bg-background-secondary-default transition-colors group cursor-pointer"
             >
               <div className="size-6 flex items-center justify-center shrink-0">
@@ -376,20 +399,33 @@ export function AppSidebar() {
                 Modus
               </span>
             </Link>
-            <button
-              onClick={() => setCollapsed(true)}
-              className="size-7.5 rounded-full border border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0 shadow-2xs flex items-center justify-center"
-              title="Collapse sidebar"
-              aria-label="Collapse sidebar"
-            >
-              <RiArrowLeftSLine className="size-4" />
-            </button>
+            {isSheet ? (
+              <button
+                type="button"
+                onClick={onNavigate}
+                className="size-7.5 rounded-full border border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0 shadow-2xs flex items-center justify-center cursor-pointer"
+                title="Close navigation menu"
+                aria-label="Close navigation menu"
+              >
+                <RiCloseLine className="size-4.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCollapsed(true)}
+                className="size-7.5 rounded-full border border-border-button-default text-text-tertiary hover:text-text-primary hover:bg-background-secondary-default transition-colors shrink-0 shadow-2xs flex items-center justify-center cursor-pointer"
+                title="Collapse sidebar"
+                aria-label="Collapse sidebar"
+              >
+                <RiArrowLeftSLine className="size-4" />
+              </button>
+            )}
           </div>
         )}
 
         {/* Quick Search Bar (Pilled Vercel Find Style) */}
         <div className="px-3 pt-3 pb-2 shrink-0">
-          {collapsed ? (
+          {isCollapsed ? (
             <div className="flex justify-center">
               <button
                 type="button"
@@ -452,7 +488,7 @@ export function AppSidebar() {
           >
             {filteredGroups.map((group, groupIndex) => (
               <div key={group.id}>
-                {collapsed ? (
+                {isCollapsed ? (
                   groupIndex > 0 && (
                     <div
                       aria-hidden
@@ -480,8 +516,9 @@ export function AppSidebar() {
                         href={item.href}
                         icon={Icon}
                         isActive={isActive}
-                        collapsed={collapsed}
+                        collapsed={isCollapsed}
                         badge={badge}
+                        onClick={onNavigate}
                       />
                     );
                   })}
@@ -492,7 +529,7 @@ export function AppSidebar() {
             {/* Dynamic Installed Business Modules */}
             {filteredModules.length > 0 && (
               <div>
-                {collapsed ? (
+                {isCollapsed ? (
                   filteredGroups.length > 0 && (
                     <div
                       aria-hidden
@@ -518,7 +555,8 @@ export function AppSidebar() {
                         href={modHref}
                         icon={RiBox3Line}
                         isActive={isActive}
-                        collapsed={collapsed}
+                        collapsed={isCollapsed}
+                        onClick={onNavigate}
                       />
                     );
                   })}
@@ -527,7 +565,7 @@ export function AppSidebar() {
             )}
 
             {/* Empty Search State */}
-            {!collapsed &&
+            {!isCollapsed &&
               trimmedQuery.length > 0 &&
               filteredGroups.length === 0 &&
               filteredModules.length === 0 && (
@@ -555,7 +593,7 @@ export function AppSidebar() {
 
         {/* PINNED FOOTER: Avatar, Name, Three-Dot Context Trigger, & Notifications */}
         <div className="shrink-0 bg-background-primary-default p-3">
-          {collapsed ? (
+          {isCollapsed ? (
             <div className="flex flex-col items-center gap-2.5">
               {/* Notification Bell Button (Top) */}
               <button
@@ -580,7 +618,7 @@ export function AppSidebar() {
                 <AriaPopover
                   placement="right bottom"
                   offset={8}
-                  className="z-110 w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-2xl transition duration-150 ease-out outline-none select-none"
+                  className="z-110 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-2xl transition duration-150 ease-out outline-none select-none"
                 >
                   <AriaDialog className="outline-none flex flex-col gap-0.5">
                     {({ close }) => renderUserMenuContent(close)}
@@ -631,7 +669,7 @@ export function AppSidebar() {
                   <AriaPopover
                     placement="top end"
                     offset={8}
-                    className="z-110 w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-2xl transition duration-150 ease-out outline-none select-none"
+                    className="z-110 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-2xl transition duration-150 ease-out outline-none select-none"
                   >
                     <AriaDialog className="outline-none flex flex-col gap-0.5">
                       {({ close }) => renderUserMenuContent(close)}

@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/base/buttons/button';
 import { Chip } from '@/components/base/badges/chip';
 import { Divider } from '@/components/base/divider/divider';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { DetailDrawerSkeleton } from '@/components/application/loading/page-skeletons';
 import { inventoryApi } from '../api/inventory-api';
 import { formatQuantity, getMovementTypeMeta } from '../utils/formatters';
 import type { Warehouse } from '../types/inventory';
@@ -75,9 +75,7 @@ export function WarehouseDetailDrawer({
           />
           <DrawerBody>
             {loading ? (
-              <div className="flex h-48 items-center justify-center">
-                <Spinner size="md" className="text-accent-600" />
-              </div>
+              <DetailDrawerSkeleton />
             ) : !detail ? (
               <p className="text-body-regular text-text-secondary">
                 Unable to load warehouse details.
@@ -99,7 +97,7 @@ export function WarehouseDetailDrawer({
                   </p>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-2xl border border-separator-border bg-background-secondary-default p-3.5">
                     <p className="text-caption-1-medium text-text-secondary">Stocked SKUs</p>
                     <p className="mt-1 text-title-2-medium text-text-primary tabular-nums">

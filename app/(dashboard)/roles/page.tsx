@@ -56,7 +56,12 @@ import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Switch } from '@/components/base/switch/switch';
 import { Avatar } from '@/components/base/avatar/avatar';
 import { Modal, ModalHeader, ModalBody, ModalFooter, AlertDialog } from '@/components/base/modal/modal';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Skeleton } from '@/components/base/skeleton/skeleton';
+import {
+  CardGridSkeleton,
+  PageShellSkeleton,
+  TableRowsSkeleton,
+} from '@/components/application/loading/page-skeletons';
 import { toast } from '@/components/base/toast/toast';
 import { Select, SelectItem } from '@/components/base/select/select';
 import { Pagination } from '@/components/base/pagination/pagination';
@@ -701,11 +706,7 @@ export default function RolesPage() {
   });
 
   if (authLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <PageShellSkeleton statsCount={4} view={viewMode} />;
   }
 
   if (!canRead) {
@@ -929,7 +930,7 @@ export default function RolesPage() {
             <AriaPopover
               placement="bottom start"
               offset={8}
-              className="z-50 w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-2xl outline-none"
+              className="z-50 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-2xl outline-none"
             >
               <AriaDialog className="outline-none flex flex-col gap-3.5">
                 <div className="flex items-center justify-between border-b border-separator-border pb-2.5">
@@ -1162,9 +1163,7 @@ export default function RolesPage() {
       {viewMode === 'table' ? (
         <div className="border border-border-button-default rounded-2xl bg-background-primary-default shadow-xs overflow-hidden">
           {loading ? (
-            <div className="flex h-64 items-center justify-center">
-              <Spinner size="md" className="text-accent-600" />
-            </div>
+            <TableRowsSkeleton rows={6} columns={5} showCheckbox />
           ) : paginatedRoles.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
               <div className="size-14 rounded-2xl bg-background-secondary-default flex items-center justify-center text-text-tertiary mb-3.5 border border-separator-border">
@@ -1271,9 +1270,7 @@ export default function RolesPage() {
           )}
         </div>
       ) : loading ? (
-        <div className="flex h-64 items-center justify-center rounded-2xl border border-border-button-default bg-background-primary-default">
-          <Spinner size="md" className="text-accent-600" />
-        </div>
+        <CardGridSkeleton count={6} />
       ) : paginatedRoles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-2xl border border-border-button-default bg-background-primary-default">
           <div className="size-14 rounded-2xl bg-background-secondary-default flex items-center justify-center text-text-tertiary mb-3.5 border border-separator-border">
@@ -1406,7 +1403,7 @@ export default function RolesPage() {
 
       {/* 5. Floating Selection Action Bar (Consistent with Users & Audit Logs) */}
       {selectedCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full border border-border-button-default bg-background-primary-default/95 backdrop-blur-md px-4 py-2 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center justify-center gap-2 max-w-[calc(100vw-2rem)] rounded-2xl sm:rounded-full border border-border-button-default bg-background-primary-default/95 backdrop-blur-md px-3 sm:px-4 py-2 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200">
           <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-caption-1-semibold bg-accent-500 text-neutral-950 font-bold">
             {selectedCount} Selected
           </span>
@@ -1512,7 +1509,7 @@ export default function RolesPage() {
                       </div>
                       {inspectLoading && (
                         <span className="inline-flex items-center gap-1.5 text-caption-1-medium text-text-tertiary">
-                          <Spinner size="xs" />
+                          <Skeleton className="size-3.5 rounded-full" />
                           <span>Loading assigned users...</span>
                         </span>
                       )}
@@ -1535,8 +1532,19 @@ export default function RolesPage() {
                         </p>
                       </div>
                       {inspectLoading ? (
-                        <div className="flex items-center justify-center py-6 rounded-xl border border-separator-border">
-                          <Spinner size="sm" />
+                        <div className="space-y-2.5 rounded-xl border border-separator-border p-3" aria-busy="true">
+                          {Array.from({ length: 3 }).map((_, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5 flex-1">
+                                <Skeleton shape="circle" className="size-8 shrink-0" />
+                                <div className="space-y-1 flex-1">
+                                  <Skeleton shape="text" className="w-28 h-3.5" />
+                                  <Skeleton shape="text" className="w-36 h-3" />
+                                </div>
+                              </div>
+                              <Skeleton className="w-14 h-5 rounded-full" />
+                            </div>
+                          ))}
                         </div>
                       ) : (inspectDetail?.users?.length || 0) === 0 ? (
                         <div className="p-4 rounded-xl border border-dashed border-separator-border text-center text-caption-1-medium text-text-tertiary">
