@@ -5,7 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { RiFolderLine, RiPriceTag3Line, RiRulerLine } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
 import { Spinner } from '@/components/base/spinner/spinner';
-import { Tab, TabList, TabPanel, Tabs } from '@/components/base/tabs/tabs';
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '@/components/base/segmented-control/segmented-control';
 import { InventoryModuleGate } from '@/features/inventory/components/inventory-module-gate';
 import { InventoryPageHeader } from '@/features/inventory/components/inventory-page-header';
 import { ProductsTab } from '@/features/inventory/components/tabs/products-tab';
@@ -82,12 +85,14 @@ function InventoryCatalogContent() {
     };
   }, [canProducts, canCategories, canUnits]);
 
-  const handleTabChange = useCallback(
-    (key: React.Key) => {
-      const next = String(key) as CatalogTabKey;
-      router.replace(`/inventory/catalog?tab=${next}`, { scroll: false });
+  const handleSelectionChange = useCallback(
+    (keys: Iterable<React.Key>) => {
+      const next = Array.from(keys)[0] as CatalogTabKey | undefined;
+      if (next && next !== activeTab) {
+        router.replace(`/inventory/catalog?tab=${next}`, { scroll: false });
+      }
     },
-    [router],
+    [activeTab, router],
   );
 
   return (
@@ -98,47 +103,58 @@ function InventoryCatalogContent() {
           description="Unified workspace for managing product SKUs, categories, and base units of measurement."
         />
 
-        <Tabs
-          selectedKey={activeTab}
-          onSelectionChange={handleTabChange}
-          className="gap-5"
-        >
-          <TabList aria-label="Catalog sections">
+        <div className="overflow-x-auto no-scrollbar">
+          <SegmentedControl
+            aria-label="Catalog sections"
+            selectedKeys={[activeTab]}
+            onSelectionChange={handleSelectionChange}
+            className="rounded-xl p-1"
+          >
             {canProducts && (
-              <Tab id="products" icon={RiPriceTag3Line} count={counts.products}>
-                Products
-              </Tab>
+              <SegmentedControlItem id="products" className="gap-2 rounded-lg px-3.5 py-1.5">
+                <RiPriceTag3Line className="size-4 shrink-0" aria-hidden />
+                <span>Products</span>
+                {counts.products != null && (
+                  <span className="inline-flex items-center justify-center rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium font-mono tabular-nums text-text-secondary">
+                    {counts.products}
+                  </span>
+                )}
+              </SegmentedControlItem>
             )}
             {canCategories && (
-              <Tab id="categories" icon={RiFolderLine} count={counts.categories}>
-                Categories
-              </Tab>
+              <SegmentedControlItem id="categories" className="gap-2 rounded-lg px-3.5 py-1.5">
+                <RiFolderLine className="size-4 shrink-0" aria-hidden />
+                <span>Categories</span>
+                {counts.categories != null && (
+                  <span className="inline-flex items-center justify-center rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium font-mono tabular-nums text-text-secondary">
+                    {counts.categories}
+                  </span>
+                )}
+              </SegmentedControlItem>
             )}
             {canUnits && (
-              <Tab id="units" icon={RiRulerLine} count={counts.units}>
-                Units
-              </Tab>
+              <SegmentedControlItem id="units" className="gap-2 rounded-lg px-3.5 py-1.5">
+                <RiRulerLine className="size-4 shrink-0" aria-hidden />
+                <span>Units</span>
+                {counts.units != null && (
+                  <span className="inline-flex items-center justify-center rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium font-mono tabular-nums text-text-secondary">
+                    {counts.units}
+                  </span>
+                )}
+              </SegmentedControlItem>
             )}
-          </TabList>
+          </SegmentedControl>
+        </div>
 
-          {canProducts && (
-            <TabPanel id="products">
-              <ProductsTab onCountChange={handleProductsCount} />
-            </TabPanel>
-          )}
-
-          {canCategories && (
-            <TabPanel id="categories">
-              <CategoriesTab onCountChange={handleCategoriesCount} />
-            </TabPanel>
-          )}
-
-          {canUnits && (
-            <TabPanel id="units">
-              <UnitsTab onCountChange={handleUnitsCount} />
-            </TabPanel>
-          )}
-        </Tabs>
+        {activeTab === 'products' && canProducts && (
+          <ProductsTab onCountChange={handleProductsCount} />
+        )}
+        {activeTab === 'categories' && canCategories && (
+          <CategoriesTab onCountChange={handleCategoriesCount} />
+        )}
+        {activeTab === 'units' && canUnits && (
+          <UnitsTab onCountChange={handleUnitsCount} />
+        )}
       </div>
     </InventoryModuleGate>
   );

@@ -10,7 +10,10 @@ import {
 } from '@remixicon/react';
 import { useAuth } from '@/providers/auth-provider';
 import { Spinner } from '@/components/base/spinner/spinner';
-import { Tab, TabList, TabPanel, Tabs } from '@/components/base/tabs/tabs';
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '@/components/base/segmented-control/segmented-control';
 import { InventoryModuleGate } from '@/features/inventory/components/inventory-module-gate';
 import { InventoryPageHeader } from '@/features/inventory/components/inventory-page-header';
 import { StockBalancesTab } from '@/features/inventory/components/tabs/stock-balances-tab';
@@ -104,6 +107,16 @@ function InventoryStockContent() {
     [router, warehouseIdParam],
   );
 
+  const handleSelectionChange = useCallback(
+    (keys: Iterable<React.Key>) => {
+      const next = Array.from(keys)[0] as StockTabKey | undefined;
+      if (next && next !== activeTab) {
+        navigateTab(next);
+      }
+    },
+    [activeTab, navigateTab],
+  );
+
   return (
     <InventoryModuleGate anyPermissions={STOCK_READ_PERMS}>
       <div className="space-y-6">
@@ -112,65 +125,79 @@ function InventoryStockContent() {
           description="Monitor per-warehouse stock balances, record controlled adjustments, execute transfers, and audit ledger movements."
         />
 
-        <Tabs
-          selectedKey={activeTab}
-          onSelectionChange={(key) => navigateTab(String(key) as StockTabKey)}
-          className="gap-5"
-        >
-          <TabList aria-label="Stock operations and ledger sections">
+        <div className="overflow-x-auto no-scrollbar">
+          <SegmentedControl
+            aria-label="Stock operations and ledger sections"
+            selectedKeys={[activeTab]}
+            onSelectionChange={handleSelectionChange}
+            className="rounded-xl p-1"
+          >
             {canStock && (
-              <Tab id="balances" icon={RiStackLine} count={counts.balances}>
-                Balances
-              </Tab>
+              <SegmentedControlItem id="balances" className="gap-2 rounded-lg px-3.5 py-1.5">
+                <RiStackLine className="size-4 shrink-0" aria-hidden />
+                <span>Balances</span>
+                {counts.balances != null && (
+                  <span className="inline-flex items-center justify-center rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium font-mono tabular-nums text-text-secondary">
+                    {counts.balances}
+                  </span>
+                )}
+              </SegmentedControlItem>
             )}
             {canStock && (
-              <Tab id="adjustments" icon={RiEqualizerLine} count={counts.adjustments}>
-                Adjustments
-              </Tab>
+              <SegmentedControlItem id="adjustments" className="gap-2 rounded-lg px-3.5 py-1.5">
+                <RiEqualizerLine className="size-4 shrink-0" aria-hidden />
+                <span>Adjustments</span>
+                {counts.adjustments != null && (
+                  <span className="inline-flex items-center justify-center rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium font-mono tabular-nums text-text-secondary">
+                    {counts.adjustments}
+                  </span>
+                )}
+              </SegmentedControlItem>
             )}
             {canStock && (
-              <Tab id="transfers" icon={RiArrowLeftRightLine} count={counts.transfers}>
-                Transfers
-              </Tab>
+              <SegmentedControlItem id="transfers" className="gap-2 rounded-lg px-3.5 py-1.5">
+                <RiArrowLeftRightLine className="size-4 shrink-0" aria-hidden />
+                <span>Transfers</span>
+                {counts.transfers != null && (
+                  <span className="inline-flex items-center justify-center rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium font-mono tabular-nums text-text-secondary">
+                    {counts.transfers}
+                  </span>
+                )}
+              </SegmentedControlItem>
             )}
             {canMovements && (
-              <Tab id="movements" icon={RiHistoryLine} count={counts.movements}>
-                Movement History
-              </Tab>
+              <SegmentedControlItem id="movements" className="gap-2 rounded-lg px-3.5 py-1.5">
+                <RiHistoryLine className="size-4 shrink-0" aria-hidden />
+                <span>Movement History</span>
+                {counts.movements != null && (
+                  <span className="inline-flex items-center justify-center rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium font-mono tabular-nums text-text-secondary">
+                    {counts.movements}
+                  </span>
+                )}
+              </SegmentedControlItem>
             )}
-          </TabList>
+          </SegmentedControl>
+        </div>
 
-          {canStock && (
-            <TabPanel id="balances">
-              <StockBalancesTab
-                initialWarehouseId={warehouseIdParam}
-                onCountChange={handleBalancesCount}
-                onSwitchTab={navigateTab}
-              />
-            </TabPanel>
-          )}
-
-          {canStock && (
-            <TabPanel id="adjustments">
-              <AdjustmentsTab onCountChange={handleAdjustmentsCount} />
-            </TabPanel>
-          )}
-
-          {canStock && (
-            <TabPanel id="transfers">
-              <TransfersTab onCountChange={handleTransfersCount} />
-            </TabPanel>
-          )}
-
-          {canMovements && (
-            <TabPanel id="movements">
-              <MovementsTab
-                initialWarehouseId={warehouseIdParam}
-                onCountChange={handleMovementsCount}
-              />
-            </TabPanel>
-          )}
-        </Tabs>
+        {activeTab === 'balances' && canStock && (
+          <StockBalancesTab
+            initialWarehouseId={warehouseIdParam}
+            onCountChange={handleBalancesCount}
+            onSwitchTab={navigateTab}
+          />
+        )}
+        {activeTab === 'adjustments' && canStock && (
+          <AdjustmentsTab onCountChange={handleAdjustmentsCount} />
+        )}
+        {activeTab === 'transfers' && canStock && (
+          <TransfersTab onCountChange={handleTransfersCount} />
+        )}
+        {activeTab === 'movements' && canMovements && (
+          <MovementsTab
+            initialWarehouseId={warehouseIdParam}
+            onCountChange={handleMovementsCount}
+          />
+        )}
       </div>
     </InventoryModuleGate>
   );
