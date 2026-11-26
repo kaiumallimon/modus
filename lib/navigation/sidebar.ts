@@ -12,7 +12,11 @@ export type SidebarNavIconKey =
   | 'procurement-overview'
   | 'procurement-suppliers'
   | 'procurement-orders'
-  | 'procurement-receipts';
+  | 'procurement-receipts'
+  | 'sales-overview'
+  | 'sales-customers'
+  | 'sales-orders'
+  | 'sales-fulfillments';
 
 export interface SidebarNavItem {
   id: string;
@@ -190,10 +194,49 @@ export const PROCUREMENT_NAV_GROUP: SidebarNavGroup = {
   ],
 };
 
+export const SALES_NAV_GROUP: SidebarNavGroup = {
+  id: 'sales',
+  label: 'SALES',
+  moduleId: 'sales',
+  requiredDependencies: ['inventory'],
+  items: [
+    {
+      id: 'sales-overview',
+      label: 'Overview',
+      href: '/sales',
+      icon: 'sales-overview',
+      permission: 'sales.dashboard.read',
+      exactMatch: true,
+    },
+    {
+      id: 'sales-customers',
+      label: 'Customers',
+      href: '/sales/customers',
+      icon: 'sales-customers',
+      permission: 'sales.customers.read',
+    },
+    {
+      id: 'sales-orders',
+      label: 'Sales Orders',
+      href: '/sales/orders',
+      icon: 'sales-orders',
+      permission: 'sales.orders.read',
+    },
+    {
+      id: 'sales-fulfillments',
+      label: 'Fulfillments & Reports',
+      href: '/sales/fulfillments',
+      icon: 'sales-fulfillments',
+      anyPermissions: ['sales.fulfillments.read', 'sales.reports.read'],
+    },
+  ],
+};
+
 export const ALL_SIDEBAR_NAV_GROUPS: SidebarNavGroup[] = [
   ...SIDEBAR_NAV_GROUPS,
   INVENTORY_NAV_GROUP,
   PROCUREMENT_NAV_GROUP,
+  SALES_NAV_GROUP,
 ];
 
 /**

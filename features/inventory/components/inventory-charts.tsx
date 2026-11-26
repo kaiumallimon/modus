@@ -496,6 +496,7 @@ export function MovementBreakdownChartCard({
       { key: 'TRANSFER_IN', label: 'Trf In', fill: 'var(--color-chart-5-active)' },
       { key: 'TRANSFER_OUT', label: 'Trf Out', fill: 'var(--color-chart-4-active)' },
       { key: 'PURCHASE_RECEIPT', label: 'PO Recv', fill: 'var(--color-chart-3-active)' },
+      { key: 'SALE_FULFILLMENT', label: 'Sale Out', fill: 'var(--color-chart-2-active)' },
     ];
 
     const counts = new Map<string, { units: number; events: number }>();

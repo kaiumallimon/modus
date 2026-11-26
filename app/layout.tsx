@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Inter, DM_Mono } from 'next/font/google';
 import '@/styles/globals.css';
 import { AuthProvider } from '@/providers/auth-provider';
@@ -39,10 +40,12 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col overflow-x-hidden bg-background-primary-default text-text-primary antialiased font-sans">
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <Suspense fallback={null}>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </Suspense>
       </body>
     </html>
   );

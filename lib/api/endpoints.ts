@@ -86,6 +86,22 @@ export const API_ENDPOINTS = {
     `/procurement/goods-receipts/${id}/confirm`,
   PROCUREMENT_SUPPLIER_TRANSACTIONS: '/procurement/supplier-transactions',
 
+  // Sales
+  SALES_DASHBOARD: '/sales/dashboard',
+  SALES_CUSTOMERS: '/sales/customers',
+  SALES_CUSTOMER_BY_ID: (id: string) => `/sales/customers/${id}`,
+  SALES_CUSTOMER_ARCHIVE: (id: string) => `/sales/customers/${id}/archive`,
+  SALES_CUSTOMER_ORDERS: (id: string) => `/sales/customers/${id}/orders`,
+  SALES_ORDERS: '/sales/orders',
+  SALES_ORDER_BY_ID: (id: string) => `/sales/orders/${id}`,
+  SALES_ORDER_CONFIRM: (id: string) => `/sales/orders/${id}/confirm`,
+  SALES_ORDER_CANCEL: (id: string) => `/sales/orders/${id}/cancel`,
+  SALES_ORDER_FULFILL: (id: string) => `/sales/orders/${id}/fulfill`,
+  SALES_FULFILLMENTS: '/sales/fulfillments',
+  SALES_FULFILLMENT_BY_ID: (id: string) => `/sales/fulfillments/${id}`,
+  SALES_REPORTS_SUMMARY: '/sales/reports/summary',
+  SALES_REPORTS_TOP_PRODUCTS: '/sales/reports/top-products',
+
   // Audit Logs
   AUDIT_LOGS: '/audit-logs',
   AUDIT_LOG_BY_ID: (id: string) => `/audit-logs/${id}`,

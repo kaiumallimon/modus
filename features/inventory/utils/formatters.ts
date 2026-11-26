@@ -83,6 +83,8 @@ export function getMovementTypeMeta(type: StockMovementType): {
       return { label: 'Transfer Out', color: 'orange' };
     case 'PURCHASE_RECEIPT':
       return { label: 'Purchase Receipt', color: 'lime' };
+    case 'SALE_FULFILLMENT':
+      return { label: 'Sale Fulfillment', color: 'purple' };
   }
 }
 

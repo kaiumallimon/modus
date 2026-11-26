@@ -274,6 +274,9 @@ export function MovementsTab({
               <SelectItem id="PURCHASE_RECEIPT" textValue="Purchase Receipt">
                 Purchase Receipt
               </SelectItem>
+              <SelectItem id="SALE_FULFILLMENT" textValue="Sale Fulfillment">
+                Sale Fulfillment
+              </SelectItem>
             </Select>
 
             <Select
