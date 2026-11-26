@@ -69,7 +69,8 @@ function LoginForm() {
           identifier: identifier.trim(),
           password: password.trim(),
         },
-        rememberMe
+        rememberMe,
+        decodeURIComponent(returnUrl)
       );
 
       try {
@@ -83,7 +84,6 @@ function LoginForm() {
       }
 
       toast.success('Signed in successfully');
-      router.replace(decodeURIComponent(returnUrl));
     } catch (err: any) {
       const msg = err.message || 'Authentication failed. Please verify your credentials.';
       setErrorMessage(msg);

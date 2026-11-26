@@ -129,6 +129,90 @@ export const AUDIT_ACTION_META: Record<string, AuditActionMeta> = {
     color: 'lime',
     category: 'admin',
   },
+  INVENTORY_PRODUCT_CREATE: {
+    value: 'INVENTORY_PRODUCT_CREATE',
+    label: 'Product Created',
+    color: 'lime',
+    category: 'admin',
+  },
+  INVENTORY_PRODUCT_UPDATE: {
+    value: 'INVENTORY_PRODUCT_UPDATE',
+    label: 'Product Updated',
+    color: 'blue',
+    category: 'admin',
+  },
+  INVENTORY_PRODUCT_ARCHIVE: {
+    value: 'INVENTORY_PRODUCT_ARCHIVE',
+    label: 'Product Archived',
+    color: 'orange',
+    category: 'admin',
+  },
+  INVENTORY_CATEGORY_CREATE: {
+    value: 'INVENTORY_CATEGORY_CREATE',
+    label: 'Category Created',
+    color: 'lime',
+    category: 'admin',
+  },
+  INVENTORY_CATEGORY_UPDATE: {
+    value: 'INVENTORY_CATEGORY_UPDATE',
+    label: 'Category Updated',
+    color: 'blue',
+    category: 'admin',
+  },
+  INVENTORY_CATEGORY_ARCHIVE: {
+    value: 'INVENTORY_CATEGORY_ARCHIVE',
+    label: 'Category Archived',
+    color: 'orange',
+    category: 'admin',
+  },
+  INVENTORY_UNIT_CREATE: {
+    value: 'INVENTORY_UNIT_CREATE',
+    label: 'Unit Created',
+    color: 'lime',
+    category: 'admin',
+  },
+  INVENTORY_UNIT_UPDATE: {
+    value: 'INVENTORY_UNIT_UPDATE',
+    label: 'Unit Updated',
+    color: 'blue',
+    category: 'admin',
+  },
+  INVENTORY_WAREHOUSE_CREATE: {
+    value: 'INVENTORY_WAREHOUSE_CREATE',
+    label: 'Warehouse Created',
+    color: 'lime',
+    category: 'admin',
+  },
+  INVENTORY_WAREHOUSE_UPDATE: {
+    value: 'INVENTORY_WAREHOUSE_UPDATE',
+    label: 'Warehouse Updated',
+    color: 'blue',
+    category: 'admin',
+  },
+  INVENTORY_WAREHOUSE_DEACTIVATE: {
+    value: 'INVENTORY_WAREHOUSE_DEACTIVATE',
+    label: 'Warehouse Deactivated',
+    color: 'orange',
+    category: 'admin',
+  },
+  INVENTORY_STOCK_ADJUST: {
+    value: 'INVENTORY_STOCK_ADJUST',
+    label: 'Stock Adjusted',
+    color: 'cyan',
+    category: 'admin',
+  },
+  INVENTORY_TRANSFER_CREATE: {
+    value: 'INVENTORY_TRANSFER_CREATE',
+    label: 'Transfer Created',
+    color: 'yellow',
+    category: 'admin',
+  },
+  INVENTORY_TRANSFER_CONFIRM: {
+    value: 'INVENTORY_TRANSFER_CONFIRM',
+    label: 'Transfer Confirmed',
+    color: 'lime',
+    category: 'admin',
+  },
 };
 
 export const AUDIT_RESOURCE_META: Record<string, AuditResourceMeta> = {
@@ -137,6 +221,7 @@ export const AUDIT_RESOURCE_META: Record<string, AuditResourceMeta> = {
   roles: { value: 'roles', label: 'Roles & Access', color: 'purple' },
   modules: { value: 'modules', label: 'Modules', color: 'yellow' },
   cdn: { value: 'cdn', label: 'CDN Storage', color: 'cyan' },
+  inventory: { value: 'inventory', label: 'Inventory', color: 'lime' },
   settings: { value: 'settings', label: 'System Settings', color: 'neutral' },
   installation: { value: 'installation', label: 'Installation', color: 'orange' },
 };

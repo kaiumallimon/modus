@@ -36,8 +36,33 @@ export const API_ENDPOINTS = {
 
   // Modules
   MODULES: '/modules',
+  MODULES_ACTIVE: '/modules/active',
   MODULE_BY_ID: (id: string) => `/modules/${id}`,
   MODULE_ACTIVATION: (id: string) => `/modules/${id}/activation`,
+
+  // Inventory
+  INVENTORY_DASHBOARD: '/inventory/dashboard',
+  INVENTORY_PRODUCTS: '/inventory/products',
+  INVENTORY_PRODUCT_BY_ID: (id: string) => `/inventory/products/${id}`,
+  INVENTORY_PRODUCT_ARCHIVE: (id: string) => `/inventory/products/${id}/archive`,
+  INVENTORY_PRODUCT_IMAGE: (id: string) => `/inventory/products/${id}/image`,
+  INVENTORY_CATEGORIES: '/inventory/categories',
+  INVENTORY_CATEGORY_BY_ID: (id: string) => `/inventory/categories/${id}`,
+  INVENTORY_CATEGORY_ARCHIVE: (id: string) => `/inventory/categories/${id}/archive`,
+  INVENTORY_UNITS: '/inventory/units',
+  INVENTORY_UNIT_BY_ID: (id: string) => `/inventory/units/${id}`,
+  INVENTORY_UNIT_ARCHIVE: (id: string) => `/inventory/units/${id}/archive`,
+  INVENTORY_WAREHOUSES: '/inventory/warehouses',
+  INVENTORY_WAREHOUSE_BY_ID: (id: string) => `/inventory/warehouses/${id}`,
+  INVENTORY_WAREHOUSE_DEACTIVATE: (id: string) => `/inventory/warehouses/${id}/deactivate`,
+  INVENTORY_STOCK: '/inventory/stock',
+  INVENTORY_ADJUSTMENTS: '/inventory/adjustments',
+  INVENTORY_ADJUSTMENT_BY_ID: (id: string) => `/inventory/adjustments/${id}`,
+  INVENTORY_TRANSFERS: '/inventory/transfers',
+  INVENTORY_TRANSFER_BY_ID: (id: string) => `/inventory/transfers/${id}`,
+  INVENTORY_TRANSFER_CONFIRM: (id: string) => `/inventory/transfers/${id}/confirm`,
+  INVENTORY_MOVEMENTS: '/inventory/movements',
+  INVENTORY_MOVEMENT_BY_ID: (id: string) => `/inventory/movements/${id}`,
 
   // Audit Logs
   AUDIT_LOGS: '/audit-logs',

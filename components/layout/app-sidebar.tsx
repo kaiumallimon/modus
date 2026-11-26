@@ -24,6 +24,10 @@ import {
   RiLifebuoyLine,
   RiBookOpenLine,
   RiFolderCloudLine,
+  RiStore2Line,
+  RiPriceTag3Line,
+  RiBuilding2Line,
+  RiStackLine,
 } from '@remixicon/react';
 import {
   Button as AriaButton,
@@ -36,7 +40,7 @@ import { apiClient } from '@/lib/api/client';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import { ModuleRegistration } from '@/lib/api/types';
 import {
-  SIDEBAR_NAV_GROUPS,
+  ALL_SIDEBAR_NAV_GROUPS,
   SidebarNavIconKey,
   filterSidebarGroups,
 } from '@/lib/navigation/sidebar';
@@ -56,6 +60,10 @@ const NAV_ICONS: Record<SidebarNavIconKey, React.ComponentType<{ className?: str
   'audit-logs': RiFileHistoryLine,
   modules: RiAppsLine,
   cdn: RiFolderCloudLine,
+  'inventory-overview': RiStore2Line,
+  'inventory-catalog': RiPriceTag3Line,
+  'inventory-warehouses': RiBuilding2Line,
+  'inventory-stock': RiStackLine,
 };
 
 interface SidebarNavLinkProps {
@@ -119,7 +127,7 @@ function SidebarNavLink({
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user, logout, hasPermission } = useAuth();
+  const { user, logout, hasPermission, isModuleActive } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModules, setActiveModules] = useState<ModuleRegistration[]>([]);
@@ -155,15 +163,17 @@ export function AppSidebar() {
     async function loadBackendData() {
       if (!user) return;
 
-      if (hasPermission('modules.read')) {
-        try {
-          const modules = await apiClient<ModuleRegistration[]>(API_ENDPOINTS.MODULES);
-          const businessModules = modules.filter((m) => m.isActivated && !m.isCore);
-          setActiveModules(businessModules);
-        } catch {
-          // Non-critical
+        if (hasPermission('modules.read')) {
+          try {
+            const modules = await apiClient<ModuleRegistration[]>(API_ENDPOINTS.MODULES);
+            const businessModules = modules.filter(
+              (m) => m.isActivated && !m.isCore && m.id !== 'inventory'
+            );
+            setActiveModules(businessModules);
+          } catch {
+            // Non-critical
+          }
         }
-      }
 
       if (hasPermission('audit.read')) {
         try {
@@ -182,7 +192,12 @@ export function AppSidebar() {
     loadBackendData();
   }, [user, hasPermission]);
 
-  const filteredGroups = filterSidebarGroups(SIDEBAR_NAV_GROUPS, hasPermission, searchQuery);
+  const filteredGroups = filterSidebarGroups(
+    ALL_SIDEBAR_NAV_GROUPS,
+    hasPermission,
+    searchQuery,
+    isModuleActive
+  );
   const trimmedQuery = searchQuery.toLowerCase().trim();
   const filteredModules = activeModules.filter(
     (mod) => !trimmedQuery || mod.name.toLowerCase().includes(trimmedQuery)
@@ -452,9 +467,10 @@ export function AppSidebar() {
                 <nav className="space-y-1" aria-label={group.label}>
                   {group.items.map((item) => {
                     const Icon = NAV_ICONS[item.icon];
-                    const isActive =
-                      pathname === item.href ||
-                      (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
+                    const isActive = item.exactMatch
+                      ? pathname === item.href
+                      : pathname === item.href ||
+                        (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
                     const badge = item.href === '/audit-logs' ? auditCount : item.badge;
 
                     return (

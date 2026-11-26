@@ -64,6 +64,9 @@ export default function ModulesPage() {
         `Module "${mod.name}" successfully ${isActivated ? 'activated' : 'deactivated'}`
       );
       setDeactivatingModule(null);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('modus:modules-updated'));
+      }
       loadModules();
     } catch (err: any) {
       toast.error(err.message || 'Failed to update module activation state');
